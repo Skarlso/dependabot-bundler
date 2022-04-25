@@ -1,0 +1,27 @@
+# action.yml
+name: 'Dependabot Bundler'
+description: 'Bundles dependabot prs into a single PR.'
+inputs:
+  token:  # id of input
+    description: 'GitHub token.'
+    required: true
+    default: ''
+  labels:  # id of input
+    description: 'Labels to apply to the PR. Coma separated list. Default is empty.'
+    required: false
+    default: ''
+  target_branch:
+    description: 'Target branch to open the bundled PR to. Default is main.'
+    required: false
+    default: 'main'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - --token=${{ inputs.token }}
+    - --labels=${{ inputs.labels }}
+    - --target-branch=${{ inputs.target_branch }}
+branding:
+  icon: "arrow-right-circle"
+  color: purple
+author: "Gergely Brautigam"
