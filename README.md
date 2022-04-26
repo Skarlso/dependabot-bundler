@@ -1,26 +1,14 @@
 # Dependabot bundler
 
-This is an action which can bundle together multiple Dependabot PRs for Go based Projects.
-
-## Example Action
-
-A simple example on how to use this action:
-
-```yaml
-- name: bundle-dependabot
-  uses: skarlso/dependabot-bundler-action
-  with:
-    token: ${{ secrets.GITHUB_TOKEN }} # must have commit access and creating PR rights
-    repo: ${{ github.event.repository.name }}
-    owner: ${{ github.event.repository.owner }}
-```
-
-## Running it once a week
-
 Bundler will gather all PRs which were created by `app/dependabot` user. Then, it will apply `go get -u` using the
-modules in the prs that it found. Once all updates have been applied, it will create a commit and a PR.
+modules in the prs that it found. Once all updates have been applied, it will create a single commit and a PR.
+
+It doesn't attempt to merge PRs causing various merge conflicts. It will basically just do what dependabot would do
+but apply it separately as a composite update.
 
 Bundler only ever commits `go.mod` and `go.sum` files. It never stages any other changes.
+
+Example running every Friday:
 
 ```yaml
 name: Dependabot Bundler
@@ -50,19 +38,22 @@ jobs:
             go-          
       - name: Install Dependabot Bundler
         run: |
-          go install github.com/Skarlso/dependabot-bundler
+          go install github.com/Skarlso/dependabot-bundler@v0.0.3
       - name: Run Dependabot Bundler
 -       run: |
-          dependabot-bundler --token ${{ secrets.GITHUB_TOKEN }} --repo test --owner test
+          dependabot-bundler --token ${{ secrets.GITHUB_TOKEN }} --repo test --owner Skarlso
 ```
 
 If everything goes well, it should result in a PR like this:
 
-![pr](pr_sample.png)
+![pr1](dummy_sample.png)
+
+This is an actual PR located [here](https://github.com/weaveworks/eksctl/pull/5175) which was created with dependabot-bundler and merged.
+
+![pr2](merged_sample.png)
 
 ## In Progress features
 
-- [ ] define custom labels on the PR
+- [ ] define custom labels on the created PR
 - [ ] define custom description
 - [ ] define custom title
-- [ ] unit tests 
