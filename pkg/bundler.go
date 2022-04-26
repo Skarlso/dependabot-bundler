@@ -13,21 +13,23 @@ import (
 
 var moduleNameRegexp = regexp.MustCompile(`Bumps \[(.*)\]`)
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
 // PullRequests defines the GitHub client's pullRequest service.
-//go:generate counterfeiter -o fakes/fake_github_client_pull_requests.go . PullRequests
+//counterfeiter:generate -o fakes/fake_github_client_pulls.go . PullRequests
 type PullRequests interface {
 	Create(ctx context.Context, owner string, repo string, pull *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
 	List(ctx context.Context, owner string, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
 }
 
 // Issues defines the GitHub client's issues service.
-//go:generate counterfeiter -o fakes/fake_github_client_issues.go . Issues
+//counterfeiter:generate -o fakes/fake_github_client_issues.go . Issues
 type Issues interface {
 	ListByRepo(ctx context.Context, owner string, repo string, opts *github.IssueListByRepoOptions) ([]*github.Issue, *github.Response, error)
 }
 
 // Git defines the GitHub client's git service.
-//go:generate counterfeiter -o fakes/fake_github_client_git.go . Git
+//counterfeiter:generate -o fakes/fake_github_client_git.go . Git
 type Git interface {
 	GetRef(ctx context.Context, owner string, repo string, ref string) (*github.Reference, *github.Response, error)
 	CreateCommit(ctx context.Context, owner string, repo string, commit *github.Commit) (*github.Commit, *github.Response, error)
@@ -37,7 +39,7 @@ type Git interface {
 }
 
 // Repositories defines the GitHub client's repositories service.
-//go:generate counterfeiter -o fakes/fake_github_client_repositories.go . Repositories
+//counterfeiter:generate -o fakes/fake_github_client_repository.go . Repositories
 type Repositories interface {
 	GetCommit(ctx context.Context, owner, repo, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error)
 }
