@@ -11,7 +11,7 @@ COPY --from=build /bundler /app/
 
 LABEL "name"="Dependabot Bundler for Go"
 LABEL "maintainer"="Gergely Brautigam <gergely@gergelybrautigam.com>"
-LABEL "version"="0.0.1"
+LABEL "version"="0.0.2"
 
 LABEL "com.github.actions.name"="Dependabot Bundler for Go"
 LABEL "com.github.actions.description"="Bundles dependabot PRs into a single PR for Go based projects."
