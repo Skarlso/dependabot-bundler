@@ -246,17 +246,17 @@ func (n *Bundler) extractModuleName(description string) string {
 }
 
 func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {
-	content, err := io.ReadAll(body)
-	if err != nil {
-		fmt.Printf("failed to read body from github response")
-		return err
+	content, bodyErr := io.ReadAll(body)
+	if bodyErr != nil {
+		fmt.Println("failed to read body from github response")
+		return bodyErr
 	}
 	defer func() {
 		if err := body.Close(); err != nil {
-			fmt.Printf("failed to close body")
+			fmt.Println("failed to close body")
 		}
 	}()
 
-	fmt.Printf("got response from github: %s", string(content))
+	fmt.Printf("got response from github: %s\n", string(content))
 	return err
 }
