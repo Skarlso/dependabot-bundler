@@ -182,19 +182,19 @@ func (n *Bundler) getTree(ref *github.Reference) (*github.Tree, error) {
 
 // pushCommit creates the commit in the given reference using the given tree.
 func (n *Bundler) pushCommit(ref *github.Reference, tree *github.Tree) (err error) {
-	//// Get the parent commit to attach the commit to.
-	//parent, _, err := n.Repositories.GetCommit(context.Background(), n.Owner, n.Repo, *ref.Object.SHA, nil)
-	//if err != nil {
-	//	return err
-	//}
-	//// This is not always populated, but is needed.
-	//parent.Commit.SHA = parent.SHA
+	// Get the parent commit to attach the commit to.
+	parent, _, err := n.Repositories.GetCommit(context.Background(), n.Owner, n.Repo, *ref.Object.SHA, nil)
+	if err != nil {
+		return err
+	}
+	// This is not always populated, but is needed.
+	parent.Commit.SHA = parent.SHA
 
 	// Create the commit using the tree.
 	date := time.Now()
 	commitMessage := "Bundling updated dependencies."
 	author := &github.CommitAuthor{Date: &date, Name: &n.AuthorName, Email: &n.AuthorEmail}
-	commit := &github.Commit{Author: author, Message: &commitMessage, Tree: tree}
+	commit := &github.Commit{Author: author, Message: &commitMessage, Tree: tree, Parents: []*github.Commit{parent.Commit}}
 	newCommit, _, err := n.Git.CreateCommit(context.Background(), n.Owner, n.Repo, commit)
 	if err != nil {
 		return err

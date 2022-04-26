@@ -1,6 +1,6 @@
 # action.yml
 name: 'Dependabot Bundler for Go'
-description: 'Bundles dependabot prs into a single PR for Go based projects.'
+description: 'Bundles dependabot PRs into a single PR for Go based projects.'
 inputs:
   token:  # id of input
     description: 'GitHub token.'
