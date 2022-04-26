@@ -6,8 +6,8 @@ import (
 	"github.com/google/go-github/v43/github"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/Skarlso/dependabot-bundler-action/pkg"
-	"github.com/Skarlso/dependabot-bundler-action/pkg/fakes"
+	"github.com/Skarlso/dependabot-bundler/pkg"
+	"github.com/Skarlso/dependabot-bundler/pkg/fakes"
 )
 
 func TestBundler(t *testing.T) {

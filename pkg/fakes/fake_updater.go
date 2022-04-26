@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/Skarlso/dependabot-bundler-action/pkg"
+	"github.com/Skarlso/dependabot-bundler/pkg"
 )
 
 type FakeUpdater struct {

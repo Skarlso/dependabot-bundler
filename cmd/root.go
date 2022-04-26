@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
-	"github.com/Skarlso/dependabot-bundler-action/pkg"
+	"github.com/Skarlso/dependabot-bundler/pkg"
 )
 
 var (

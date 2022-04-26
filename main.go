@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/Skarlso/dependabot-bundler-action/cmd"
+	"github.com/Skarlso/dependabot-bundler/cmd"
 )
 
 func main() {

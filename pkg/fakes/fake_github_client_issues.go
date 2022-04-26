@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Skarlso/dependabot-bundler-action/pkg"
+	"github.com/Skarlso/dependabot-bundler/pkg"
 	"github.com/google/go-github/v43/github"
 )
 

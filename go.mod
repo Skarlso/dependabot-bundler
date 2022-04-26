@@ -1,4 +1,4 @@
-module github.com/Skarlso/dependabot-bundler-action
+module github.com/Skarlso/dependabot-bundler
 
 go 1.18
 

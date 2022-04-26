@@ -39,12 +39,21 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.18.x
-      - name: bundle-dependabot
-        uses: skarlso/dependabot-bundler-action
+      - name: Cache go-build and mod
+        uses: actions/cache@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # must have commit access and creating PR rights
-          repo: ${{ github.event.repository.name }}
-          owner: ${{ github.event.repository.owner }}
+          path: |
+            ~/.cache/go-build/
+            ~/go/pkg/mod/
+          key: go-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            go-          
+      - name: Install Dependabot Bundler
+        run: |
+          go install github.com/Skarlso/dependabot-bundler
+      - name: Run Dependabot Bundler
+-       run: |
+          dependabot-bundler --token ${{ secrets.GITHUB_TOKEN }} --repo test --owner test
 ```
 
 If everything goes well, it should result in a PR like this:
