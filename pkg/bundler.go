@@ -64,6 +64,8 @@ type Config struct {
 	Git          Git
 	Updater      Updater
 	Repositories Repositories
+
+	Test bool
 }
 
 // NewBundler creates a new Bundler.
@@ -87,7 +89,6 @@ func (n *Bundler) Bundle() error {
 		return n.logErrorWithBody(err, response.Body)
 	}
 
-	// filter pull requests
 	var (
 		count     int
 		prNumbers string
@@ -162,7 +163,14 @@ func (n *Bundler) getTree(ref *github.Reference) (*github.Tree, error) {
 
 	// We only ever add the mod and sum file. We never commit anything else.
 	// This prevents us from creating prs which contain unrelated changes to the update.
-	for _, file := range []string{"go.mod", "go.sum"} {
+	// Alternatively, we could gather a diff and see what changed and gather those.
+	// This is purely for testing purposes which is bad because it leaks for test purposes.
+	// TODO: Do this some other way.
+	var files []string
+	if !n.Test {
+		files = []string{"go.mod", "go.sum"}
+	}
+	for _, file := range files {
 		b, err := ioutil.ReadFile(file)
 		if err != nil {
 			return nil, err
