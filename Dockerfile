@@ -6,8 +6,7 @@ WORKDIR /app
 COPY . .
 RUN go build -o /bundler
 
-FROM alpine
-RUN apk add -u ca-certificates
+FROM golang:1.18-alpine
 COPY --from=build /bundler /app/
 
 LABEL "name"="Dependabot Bundler for Go"
