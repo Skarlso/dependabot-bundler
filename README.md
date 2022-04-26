@@ -1,6 +1,6 @@
 # Dependabot bundler
 
-This is a simple Slack notification action which runs using a Bot token.
+This is an action which can bundle together multiple Dependabot PRs for Go based Projects.
 
 ## Example Action
 

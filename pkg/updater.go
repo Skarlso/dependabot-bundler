@@ -20,6 +20,7 @@ func NewGoUpdater() *GoUpdater {
 
 // Update updates a dependency using go get in the current working directory.
 func (g *GoUpdater) Update(module string) error {
+	fmt.Printf("updating dependency for %s\n", module)
 	cmd := exec.Command("go", "get", "-u", module)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		fmt.Printf("update failed, output from command: %s; error: %s", string(output), err)

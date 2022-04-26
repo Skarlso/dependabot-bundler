@@ -13,8 +13,6 @@ import (
 
 var moduleNameRegexp = regexp.MustCompile(`Bumps \[(.*)\]`)
 
-// Todo: consider using git command line instead, since that's already set up?
-
 // PullRequests defines the GitHub client's pullRequest service.
 //go:generate counterfeiter -o fakes/fake_github_client_pull_requests.go . PullRequests
 type PullRequests interface {
@@ -22,10 +20,14 @@ type PullRequests interface {
 	List(ctx context.Context, owner string, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
 }
 
+// Issues defines the GitHub client's issues service.
+//go:generate counterfeiter -o fakes/fake_github_client_issues.go . Issues
 type Issues interface {
 	ListByRepo(ctx context.Context, owner string, repo string, opts *github.IssueListByRepoOptions) ([]*github.Issue, *github.Response, error)
 }
 
+// Git defines the GitHub client's git service.
+//go:generate counterfeiter -o fakes/fake_github_client_git.go . Git
 type Git interface {
 	GetRef(ctx context.Context, owner string, repo string, ref string) (*github.Reference, *github.Response, error)
 	CreateCommit(ctx context.Context, owner string, repo string, commit *github.Commit) (*github.Commit, *github.Response, error)
@@ -34,6 +36,8 @@ type Git interface {
 	UpdateRef(ctx context.Context, owner string, repo string, ref *github.Reference, force bool) (*github.Reference, *github.Response, error)
 }
 
+// Repositories defines the GitHub client's repositories service.
+//go:generate counterfeiter -o fakes/fake_github_client_repositories.go . Repositories
 type Repositories interface {
 	GetCommit(ctx context.Context, owner, repo, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error)
 }
@@ -43,6 +47,7 @@ type Bundler struct {
 	Config
 }
 
+// Config contains dependencies and configuration for the Bundler.
 type Config struct {
 	Labels       string
 	TargetBranch string
@@ -59,15 +64,16 @@ type Config struct {
 	Repositories Repositories
 }
 
-// NewBundler creates a new Slack notifier.
+// NewBundler creates a new Bundler.
 func NewBundler(cfg Config) *Bundler {
 	return &Bundler{
 		Config: cfg,
 	}
 }
 
+// Bundle performs the action which bundles together dependabot PRs.
 func (n *Bundler) Bundle() error {
-	fmt.Printf("attempting to bundle PRs")
+	fmt.Println("attempting to bundle PRs")
 	issues, response, err := n.Issues.ListByRepo(context.Background(), n.Owner, n.Repo, &github.IssueListByRepoOptions{
 		State:   "open",
 		Creator: n.BotName,
@@ -88,15 +94,15 @@ func (n *Bundler) Bundle() error {
 		if issue.PullRequestLinks != nil {
 			moduleName := n.extractModuleName(*issue.Body)
 			if moduleName == "" {
-				fmt.Printf("skipping issue %s as no module name was found in description", *issue.Title)
+				fmt.Printf("skipping issue %s as no module name was found in description\n", *issue.Title)
 				continue
 			}
 			if err := n.Updater.Update(moduleName); err != nil {
-				fmt.Printf("failed to update %s issue; failure was: %s, skipping...", *issue.Title, err)
+				fmt.Printf("failed to update %s issue; failure was: %s, skipping...\n", *issue.Title, err)
 				continue
 			}
 			count++
-			prNumbers += fmt.Sprintf("#%d\n", *issue.ID)
+			prNumbers += fmt.Sprintf("#%d\n", *issue.Number)
 		}
 	}
 
@@ -104,31 +110,31 @@ func (n *Bundler) Bundle() error {
 		fmt.Println("no pull requests found to bundle, exiting...")
 		return nil
 	}
-	fmt.Printf("gathered %d pull requests, opening PR...", count)
+	fmt.Printf("gathered %d pull requests, opening PR...\n", count)
 	// open a PR with the modifications
 	branch, ref, err := n.getRef()
 	if err != nil {
-		fmt.Printf("failed to create ref")
+		fmt.Println("failed to create ref")
 		return err
 	}
 
 	tree, err := n.getTree(ref)
 	if err != nil {
-		fmt.Printf("failed to get tree")
+		fmt.Println("failed to get tree")
 		return err
 	}
 
 	if err := n.pushCommit(ref, tree); err != nil {
-		fmt.Printf("failed to push commit")
+		fmt.Println("failed to push commit")
 		return err
 	}
 
-	if err := n.createPR(branch, "Bundling together prs: "+prNumbers, "Bundling dependabot PRs"); err != nil {
-		fmt.Printf("failed to create PR")
+	if err := n.createPR(branch, "Bundling together prs: \n"+prNumbers, "Bundling dependabot PRs"); err != nil {
+		fmt.Println("failed to create PR")
 		return err
 	}
 
-	fmt.Printf("PR opened. Thank you for using Bundler, goodbye.")
+	fmt.Println("PR opened. Thank you for using Bundler, goodbye.")
 	return nil
 }
 
@@ -138,10 +144,14 @@ func (n *Bundler) getRef() (branch string, ref *github.Reference, err error) {
 		return "", nil, err
 	}
 	// random generate commit Branch
-	var commitBranch string
+	commitBranch := n.generateCommitBranch()
 	newRef := &github.Reference{Ref: github.String("refs/heads/" + commitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
 	ref, _, err = n.Git.CreateRef(context.Background(), n.Owner, n.Repo, newRef)
 	return commitBranch, ref, err
+}
+
+func (n *Bundler) generateCommitBranch() string {
+	return fmt.Sprintf("bundler-%d", time.Now().UTC().Unix())
 }
 
 func (n *Bundler) getTree(ref *github.Reference) (*github.Tree, error) {
@@ -155,7 +165,15 @@ func (n *Bundler) getTree(ref *github.Reference) (*github.Tree, error) {
 		if err != nil {
 			return nil, err
 		}
-		entries = append(entries, &github.TreeEntry{Path: github.String(file), Type: github.String("blob"), Content: github.String(string(b)), Mode: github.String("100644")})
+		entries = append(
+			entries,
+			&github.TreeEntry{
+				Path:    github.String(file),
+				Type:    github.String("blob"),
+				Content: github.String(string(b)),
+				Mode:    github.String("100644"),
+			},
+		)
 	}
 
 	tree, _, err := n.Git.CreateTree(context.Background(), n.Owner, n.Repo, *ref.Object.SHA, entries)
@@ -164,25 +182,24 @@ func (n *Bundler) getTree(ref *github.Reference) (*github.Tree, error) {
 
 // pushCommit creates the commit in the given reference using the given tree.
 func (n *Bundler) pushCommit(ref *github.Reference, tree *github.Tree) (err error) {
-	// Get the parent commit to attach the commit to.
-	parent, _, err := n.Repositories.GetCommit(context.Background(), n.Owner, n.Repo, *ref.Object.SHA, nil)
-	if err != nil {
-		return err
-	}
-	// This is not always populated, but is needed.
-	parent.Commit.SHA = parent.SHA
+	//// Get the parent commit to attach the commit to.
+	//parent, _, err := n.Repositories.GetCommit(context.Background(), n.Owner, n.Repo, *ref.Object.SHA, nil)
+	//if err != nil {
+	//	return err
+	//}
+	//// This is not always populated, but is needed.
+	//parent.Commit.SHA = parent.SHA
 
 	// Create the commit using the tree.
 	date := time.Now()
 	commitMessage := "Bundling updated dependencies."
 	author := &github.CommitAuthor{Date: &date, Name: &n.AuthorName, Email: &n.AuthorEmail}
-	commit := &github.Commit{Author: author, Message: &commitMessage, Tree: tree, Parents: []*github.Commit{parent.Commit}}
+	commit := &github.Commit{Author: author, Message: &commitMessage, Tree: tree}
 	newCommit, _, err := n.Git.CreateCommit(context.Background(), n.Owner, n.Repo, commit)
 	if err != nil {
 		return err
 	}
 
-	// Attach the commit to the master branch.
 	ref.Object.SHA = newCommit.SHA
 	_, _, err = n.Git.UpdateRef(context.Background(), n.Owner, n.Repo, ref, false)
 	return err
