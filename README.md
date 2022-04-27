@@ -40,7 +40,7 @@ jobs:
         run: |
           go install github.com/Skarlso/dependabot-bundler@v0.0.3
       - name: Run Dependabot Bundler
--       run: |
+        run: |
           dependabot-bundler --token ${{ secrets.GITHUB_TOKEN }} --repo test --owner Skarlso
 ```
 
@@ -51,6 +51,18 @@ If everything goes well, it should result in a PR like this:
 This is an actual PR located [here](https://github.com/weaveworks/eksctl/pull/5175) which was created with dependabot-bundler and merged.
 
 ![pr2](merged_sample.png)
+
+Dependabot can apply labels to the created PR such as:
+
+```yaml
+      - name: Run Dependabot Bundler
+        run: |
+          dependabot-bundler --token ${{ secrets.GITHUB_TOKEN }} --repo test --owner Skarlso --labels bug,duplicate
+```
+
+Which will result in a PR like this:
+
+![pr3](pr_with_labels.png)
 
 ## In Progress features
 
