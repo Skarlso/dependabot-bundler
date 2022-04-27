@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/v43/github"
@@ -25,6 +26,7 @@ type PullRequests interface {
 // Issues defines the GitHub client's issues service.
 //counterfeiter:generate -o fakes/fake_github_client_issues.go . Issues
 type Issues interface {
+	AddLabelsToIssue(ctx context.Context, owner string, repo string, number int, labels []string) ([]*github.Label, *github.Response, error)
 	ListByRepo(ctx context.Context, owner string, repo string, opts *github.IssueListByRepoOptions) ([]*github.Issue, *github.Response, error)
 }
 
@@ -132,8 +134,14 @@ func (n *Bundler) Bundle() error {
 		return err
 	}
 
-	if err := n.createPR(branch, "Bundling together prs: \n"+prNumbers, "Bundling dependabot PRs"); err != nil {
+	number, err := n.createPR(branch, "Bundling together prs: \n"+prNumbers, "Bundling dependabot PRs")
+	if err != nil {
 		fmt.Println("failed to create PR")
+		return err
+	}
+
+	if err := n.addLabel(number); err != nil {
+		fmt.Println("failed to apply labels to the PR ", n.Labels)
 		return err
 	}
 
@@ -215,7 +223,7 @@ func (n *Bundler) pushCommit(ref *github.Reference, tree *github.Tree) (err erro
 	return err
 }
 
-func (n *Bundler) createPR(commitBranch string, description string, title string) error {
+func (n *Bundler) createPR(commitBranch string, description string, title string) (*int, error) {
 	newPR := &github.NewPullRequest{
 		Title:               &title,
 		Head:                &commitBranch,
@@ -226,11 +234,11 @@ func (n *Bundler) createPR(commitBranch string, description string, title string
 
 	pr, _, err := n.Pulls.Create(context.Background(), n.Owner, n.Repo, newPR)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
-	return nil
+	return pr.Number, nil
 }
 
 func (n *Bundler) extractModuleName(description string) string {
@@ -258,5 +266,14 @@ func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {
 	}()
 
 	fmt.Printf("got response from github: %s\n", string(content))
+	return err
+}
+
+func (n *Bundler) addLabel(number *int) error {
+	labels := strings.Split(n.Labels, ",")
+	if len(labels) == 0 {
+		return nil
+	}
+	_, _, err := n.Issues.AddLabelsToIssue(context.Background(), n.Owner, n.Repo, *number, labels)
 	return err
 }

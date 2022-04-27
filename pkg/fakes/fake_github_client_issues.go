@@ -10,6 +10,25 @@ import (
 )
 
 type FakeIssues struct {
+	AddLabelsToIssueStub        func(context.Context, string, string, int, []string) ([]*github.Label, *github.Response, error)
+	addLabelsToIssueMutex       sync.RWMutex
+	addLabelsToIssueArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 int
+		arg5 []string
+	}
+	addLabelsToIssueReturns struct {
+		result1 []*github.Label
+		result2 *github.Response
+		result3 error
+	}
+	addLabelsToIssueReturnsOnCall map[int]struct {
+		result1 []*github.Label
+		result2 *github.Response
+		result3 error
+	}
 	ListByRepoStub        func(context.Context, string, string, *github.IssueListByRepoOptions) ([]*github.Issue, *github.Response, error)
 	listByRepoMutex       sync.RWMutex
 	listByRepoArgsForCall []struct {
@@ -30,6 +49,82 @@ type FakeIssues struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeIssues) AddLabelsToIssue(arg1 context.Context, arg2 string, arg3 string, arg4 int, arg5 []string) ([]*github.Label, *github.Response, error) {
+	var arg5Copy []string
+	if arg5 != nil {
+		arg5Copy = make([]string, len(arg5))
+		copy(arg5Copy, arg5)
+	}
+	fake.addLabelsToIssueMutex.Lock()
+	ret, specificReturn := fake.addLabelsToIssueReturnsOnCall[len(fake.addLabelsToIssueArgsForCall)]
+	fake.addLabelsToIssueArgsForCall = append(fake.addLabelsToIssueArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 int
+		arg5 []string
+	}{arg1, arg2, arg3, arg4, arg5Copy})
+	stub := fake.AddLabelsToIssueStub
+	fakeReturns := fake.addLabelsToIssueReturns
+	fake.recordInvocation("AddLabelsToIssue", []interface{}{arg1, arg2, arg3, arg4, arg5Copy})
+	fake.addLabelsToIssueMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *FakeIssues) AddLabelsToIssueCallCount() int {
+	fake.addLabelsToIssueMutex.RLock()
+	defer fake.addLabelsToIssueMutex.RUnlock()
+	return len(fake.addLabelsToIssueArgsForCall)
+}
+
+func (fake *FakeIssues) AddLabelsToIssueCalls(stub func(context.Context, string, string, int, []string) ([]*github.Label, *github.Response, error)) {
+	fake.addLabelsToIssueMutex.Lock()
+	defer fake.addLabelsToIssueMutex.Unlock()
+	fake.AddLabelsToIssueStub = stub
+}
+
+func (fake *FakeIssues) AddLabelsToIssueArgsForCall(i int) (context.Context, string, string, int, []string) {
+	fake.addLabelsToIssueMutex.RLock()
+	defer fake.addLabelsToIssueMutex.RUnlock()
+	argsForCall := fake.addLabelsToIssueArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeIssues) AddLabelsToIssueReturns(result1 []*github.Label, result2 *github.Response, result3 error) {
+	fake.addLabelsToIssueMutex.Lock()
+	defer fake.addLabelsToIssueMutex.Unlock()
+	fake.AddLabelsToIssueStub = nil
+	fake.addLabelsToIssueReturns = struct {
+		result1 []*github.Label
+		result2 *github.Response
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeIssues) AddLabelsToIssueReturnsOnCall(i int, result1 []*github.Label, result2 *github.Response, result3 error) {
+	fake.addLabelsToIssueMutex.Lock()
+	defer fake.addLabelsToIssueMutex.Unlock()
+	fake.AddLabelsToIssueStub = nil
+	if fake.addLabelsToIssueReturnsOnCall == nil {
+		fake.addLabelsToIssueReturnsOnCall = make(map[int]struct {
+			result1 []*github.Label
+			result2 *github.Response
+			result3 error
+		})
+	}
+	fake.addLabelsToIssueReturnsOnCall[i] = struct {
+		result1 []*github.Label
+		result2 *github.Response
+		result3 error
+	}{result1, result2, result3}
 }
 
 func (fake *FakeIssues) ListByRepo(arg1 context.Context, arg2 string, arg3 string, arg4 *github.IssueListByRepoOptions) ([]*github.Issue, *github.Response, error) {
@@ -105,6 +200,8 @@ func (fake *FakeIssues) ListByRepoReturnsOnCall(i int, result1 []*github.Issue, 
 func (fake *FakeIssues) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.addLabelsToIssueMutex.RLock()
+	defer fake.addLabelsToIssueMutex.RUnlock()
 	fake.listByRepoMutex.RLock()
 	defer fake.listByRepoMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

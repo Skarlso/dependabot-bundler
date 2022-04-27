@@ -54,6 +54,6 @@ This is an actual PR located [here](https://github.com/weaveworks/eksctl/pull/51
 
 ## In Progress features
 
-- [ ] define custom labels on the created PR
+- [x] define custom labels on the created PR
 - [ ] define custom description
 - [ ] define custom title

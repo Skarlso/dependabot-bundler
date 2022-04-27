@@ -17,7 +17,7 @@ func TestBundler(t *testing.T) {
 	fakePulls := &fakes.FakePullRequests{}
 	fakeUpdater := &fakes.FakeUpdater{}
 	bundler := pkg.NewBundler(pkg.Config{
-		Labels:       "",
+		Labels:       "label1,label2",
 		TargetBranch: "main",
 		Owner:        "owner",
 		Repo:         "repo",
@@ -99,10 +99,18 @@ func TestBundler(t *testing.T) {
 
 	fakePulls.CreateReturns(&github.PullRequest{
 		HTMLURL: github.String("https://github.com/test/test/pulls/1"),
+		Number:  github.Int(1),
 	}, nil, nil)
+
+	fakeIssues.AddLabelsToIssueReturns(nil, nil, nil)
 
 	assert.NoError(t, bundler.Bundle())
 
 	moduleName := fakeUpdater.UpdateArgsForCall(0)
 	assert.Equal(t, "github.com/test/test", moduleName)
+	_, owner, repo, number, labels := fakeIssues.AddLabelsToIssueArgsForCall(0)
+	assert.Equal(t, "owner", owner)
+	assert.Equal(t, "repo", repo)
+	assert.Equal(t, 1, number)
+	assert.Equal(t, []string{"label1", "label2"}, labels)
 }
