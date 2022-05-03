@@ -270,10 +270,12 @@ func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {
 }
 
 func (n *Bundler) addLabel(number *int) error {
-	labels := strings.Split(n.Labels, ",")
-	if len(labels) == 0 {
+	// splitting an empty string will result in a 1 len slice with the empty string in it.
+	// thus we check early.
+	if n.Labels == "" {
 		return nil
 	}
+	labels := strings.Split(n.Labels, ",")
 	_, _, err := n.Issues.AddLabelsToIssue(context.Background(), n.Owner, n.Repo, *number, labels)
 	return err
 }

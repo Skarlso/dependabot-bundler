@@ -71,7 +71,6 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 		fmt.Printf("failed to bundle PRs: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Successfully bundled dependency bot PRs. Happy bundling.\n")
 }
 
 // Execute runs the main krok command.
