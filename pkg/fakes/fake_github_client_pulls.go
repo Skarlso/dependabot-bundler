@@ -28,21 +28,21 @@ type FakePullRequests struct {
 		result2 *github.Response
 		result3 error
 	}
-	ListStub        func(context.Context, string, string, *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
-	listMutex       sync.RWMutex
-	listArgsForCall []struct {
+	GetStub        func(context.Context, string, string, int) (*github.PullRequest, *github.Response, error)
+	getMutex       sync.RWMutex
+	getArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
-		arg4 *github.PullRequestListOptions
+		arg4 int
 	}
-	listReturns struct {
-		result1 []*github.PullRequest
+	getReturns struct {
+		result1 *github.PullRequest
 		result2 *github.Response
 		result3 error
 	}
-	listReturnsOnCall map[int]struct {
-		result1 []*github.PullRequest
+	getReturnsOnCall map[int]struct {
+		result1 *github.PullRequest
 		result2 *github.Response
 		result3 error
 	}
@@ -120,19 +120,19 @@ func (fake *FakePullRequests) CreateReturnsOnCall(i int, result1 *github.PullReq
 	}{result1, result2, result3}
 }
 
-func (fake *FakePullRequests) List(arg1 context.Context, arg2 string, arg3 string, arg4 *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error) {
-	fake.listMutex.Lock()
-	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
-	fake.listArgsForCall = append(fake.listArgsForCall, struct {
+func (fake *FakePullRequests) Get(arg1 context.Context, arg2 string, arg3 string, arg4 int) (*github.PullRequest, *github.Response, error) {
+	fake.getMutex.Lock()
+	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
+	fake.getArgsForCall = append(fake.getArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
-		arg4 *github.PullRequestListOptions
+		arg4 int
 	}{arg1, arg2, arg3, arg4})
-	stub := fake.ListStub
-	fakeReturns := fake.listReturns
-	fake.recordInvocation("List", []interface{}{arg1, arg2, arg3, arg4})
-	fake.listMutex.Unlock()
+	stub := fake.GetStub
+	fakeReturns := fake.getReturns
+	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3, arg4)
 	}
@@ -142,49 +142,49 @@ func (fake *FakePullRequests) List(arg1 context.Context, arg2 string, arg3 strin
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
-func (fake *FakePullRequests) ListCallCount() int {
-	fake.listMutex.RLock()
-	defer fake.listMutex.RUnlock()
-	return len(fake.listArgsForCall)
+func (fake *FakePullRequests) GetCallCount() int {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	return len(fake.getArgsForCall)
 }
 
-func (fake *FakePullRequests) ListCalls(stub func(context.Context, string, string, *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)) {
-	fake.listMutex.Lock()
-	defer fake.listMutex.Unlock()
-	fake.ListStub = stub
+func (fake *FakePullRequests) GetCalls(stub func(context.Context, string, string, int) (*github.PullRequest, *github.Response, error)) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = stub
 }
 
-func (fake *FakePullRequests) ListArgsForCall(i int) (context.Context, string, string, *github.PullRequestListOptions) {
-	fake.listMutex.RLock()
-	defer fake.listMutex.RUnlock()
-	argsForCall := fake.listArgsForCall[i]
+func (fake *FakePullRequests) GetArgsForCall(i int) (context.Context, string, string, int) {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	argsForCall := fake.getArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
-func (fake *FakePullRequests) ListReturns(result1 []*github.PullRequest, result2 *github.Response, result3 error) {
-	fake.listMutex.Lock()
-	defer fake.listMutex.Unlock()
-	fake.ListStub = nil
-	fake.listReturns = struct {
-		result1 []*github.PullRequest
+func (fake *FakePullRequests) GetReturns(result1 *github.PullRequest, result2 *github.Response, result3 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = nil
+	fake.getReturns = struct {
+		result1 *github.PullRequest
 		result2 *github.Response
 		result3 error
 	}{result1, result2, result3}
 }
 
-func (fake *FakePullRequests) ListReturnsOnCall(i int, result1 []*github.PullRequest, result2 *github.Response, result3 error) {
-	fake.listMutex.Lock()
-	defer fake.listMutex.Unlock()
-	fake.ListStub = nil
-	if fake.listReturnsOnCall == nil {
-		fake.listReturnsOnCall = make(map[int]struct {
-			result1 []*github.PullRequest
+func (fake *FakePullRequests) GetReturnsOnCall(i int, result1 *github.PullRequest, result2 *github.Response, result3 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = nil
+	if fake.getReturnsOnCall == nil {
+		fake.getReturnsOnCall = make(map[int]struct {
+			result1 *github.PullRequest
 			result2 *github.Response
 			result3 error
 		})
 	}
-	fake.listReturnsOnCall[i] = struct {
-		result1 []*github.PullRequest
+	fake.getReturnsOnCall[i] = struct {
+		result1 *github.PullRequest
 		result2 *github.Response
 		result3 error
 	}{result1, result2, result3}
@@ -195,8 +195,8 @@ func (fake *FakePullRequests) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
-	fake.listMutex.RLock()
-	defer fake.listMutex.RUnlock()
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

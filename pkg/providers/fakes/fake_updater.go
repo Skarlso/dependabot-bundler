@@ -4,42 +4,46 @@ package fakes
 import (
 	"sync"
 
-	"github.com/Skarlso/dependabot-bundler/pkg"
+	"github.com/Skarlso/dependabot-bundler/pkg/providers"
 )
 
 type FakeUpdater struct {
-	UpdateStub        func(string) error
+	UpdateStub        func(string, string) ([]string, error)
 	updateMutex       sync.RWMutex
 	updateArgsForCall []struct {
 		arg1 string
+		arg2 string
 	}
 	updateReturns struct {
-		result1 error
+		result1 []string
+		result2 error
 	}
 	updateReturnsOnCall map[int]struct {
-		result1 error
+		result1 []string
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeUpdater) Update(arg1 string) error {
+func (fake *FakeUpdater) Update(arg1 string, arg2 string) ([]string, error) {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
 		arg1 string
-	}{arg1})
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
-	fake.recordInvocation("Update", []interface{}{arg1})
+	fake.recordInvocation("Update", []interface{}{arg1, arg2})
 	fake.updateMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeUpdater) UpdateCallCount() int {
@@ -48,40 +52,43 @@ func (fake *FakeUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeUpdater) UpdateCalls(stub func(string) error) {
+func (fake *FakeUpdater) UpdateCalls(stub func(string, string) ([]string, error)) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeUpdater) UpdateArgsForCall(i int) string {
+func (fake *FakeUpdater) UpdateArgsForCall(i int) (string, string) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeUpdater) UpdateReturns(result1 error) {
+func (fake *FakeUpdater) UpdateReturns(result1 []string, result2 error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = nil
 	fake.updateReturns = struct {
-		result1 error
-	}{result1}
+		result1 []string
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeUpdater) UpdateReturnsOnCall(i int, result1 error) {
+func (fake *FakeUpdater) UpdateReturnsOnCall(i int, result1 []string, result2 error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = nil
 	if fake.updateReturnsOnCall == nil {
 		fake.updateReturnsOnCall = make(map[int]struct {
-			result1 error
+			result1 []string
+			result2 error
 		})
 	}
 	fake.updateReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+		result1 []string
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeUpdater) Invocations() map[string][][]interface{} {
@@ -108,4 +115,4 @@ func (fake *FakeUpdater) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ pkg.Updater = new(FakeUpdater)
+var _ providers.Updater = new(FakeUpdater)
