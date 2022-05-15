@@ -34,6 +34,8 @@ func (g *GithubActionUpdater) Update(body, branch string) ([]string, error) {
 	if actionName == "" && from == "" && to == "" {
 		return nil, fmt.Errorf("failed to extract action name and from -> to version from description: %s", body)
 	}
+	to = strings.TrimSuffix(to, ".")
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current working folder: %w", err)
@@ -67,6 +69,10 @@ func (g *GithubActionUpdater) Update(body, branch string) ([]string, error) {
 				if err := os.WriteFile(path, content, info.Mode()); err != nil {
 					return fmt.Errorf("failed to modify file content %w", err)
 				}
+
+				// This is the full path. Trim the current working directory from it
+				path = strings.TrimPrefix(path, cwd)
+				path = strings.TrimPrefix(path, "/")
 				modifiedFiles = append(modifiedFiles, path)
 			}
 			return nil

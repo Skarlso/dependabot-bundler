@@ -25,6 +25,7 @@ func NewGoUpdater(next providers.Updater) *GoUpdater {
 // Update updates a dependency using go get in the current working directory.
 func (g *GoUpdater) Update(body, branch string) ([]string, error) {
 	if !strings.Contains(branch, "go_modules") {
+		fmt.Printf("go_modules not found in branch name, calling next in line %s\n", branch)
 		if g.Next == nil {
 			return nil, fmt.Errorf("no Next updater defined")
 		}

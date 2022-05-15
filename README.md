@@ -64,6 +64,15 @@ Which will result in a PR like this:
 
 ![pr3](pr_with_labels.png)
 
+## Updating GitHub Actions
+
+Dependabot Bundler is now able to bundle GitHub actions updates as well.
+
+If there are PRs which update the version of GitHub actions, bundler will now take those updates as well
+and apply them to the created PR.
+
+![pr4](pr_with_actions.png)
+
 ## In Progress features
 
 - [x] define custom labels on the created PR
