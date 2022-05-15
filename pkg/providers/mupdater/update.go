@@ -1,4 +1,4 @@
-package modules_updater
+package mupdater
 
 import (
 	"fmt"

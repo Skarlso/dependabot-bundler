@@ -1,4 +1,4 @@
-package github_action_updater
+package ghaupdater
 
 import (
 	"bytes"

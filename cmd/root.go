@@ -10,8 +10,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/Skarlso/dependabot-bundler/pkg"
-	ghau "github.com/Skarlso/dependabot-bundler/pkg/providers/github_action_updater"
-	mu "github.com/Skarlso/dependabot-bundler/pkg/providers/modules_updater"
+	ghau "github.com/Skarlso/dependabot-bundler/pkg/providers/ghaupdater"
+	mu "github.com/Skarlso/dependabot-bundler/pkg/providers/mupdater"
 )
 
 var (
