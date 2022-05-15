@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/v43/github"
-)
 
-var moduleNameRegexp = regexp.MustCompile(`Bumps \[(.*)\]`)
+	"github.com/Skarlso/dependabot-bundler/pkg/providers"
+)
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 
@@ -20,7 +19,7 @@ var moduleNameRegexp = regexp.MustCompile(`Bumps \[(.*)\]`)
 //counterfeiter:generate -o fakes/fake_github_client_pulls.go . PullRequests
 type PullRequests interface {
 	Create(ctx context.Context, owner string, repo string, pull *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
-	List(ctx context.Context, owner string, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
+	Get(ctx context.Context, owner string, repo string, number int) (*github.PullRequest, *github.Response, error)
 }
 
 // Issues defines the GitHub client's issues service.
@@ -64,7 +63,7 @@ type Config struct {
 	Issues       Issues
 	Pulls        PullRequests
 	Git          Git
-	Updater      Updater
+	Updater      providers.Updater
 	Repositories Repositories
 
 	Test bool
@@ -92,20 +91,27 @@ func (n *Bundler) Bundle() error {
 	}
 
 	var (
-		count     int
-		prNumbers string
+		count         int
+		prNumbers     string
+		modifiedFiles []string
 	)
 	for _, issue := range issues {
 		if issue.PullRequestLinks != nil {
-			moduleName := n.extractModuleName(*issue.Body)
-			if moduleName == "" {
-				fmt.Printf("skipping issue %s as no module name was found in description\n", *issue.Title)
+			pr, _, err := n.Pulls.Get(context.Background(), n.Owner, n.Repo, issue.GetNumber())
+			if err != nil {
+				fmt.Printf("failed to get pull request for number %d with error %s, skipping \n", issue.GetNumber(), err)
 				continue
 			}
-			if err := n.Updater.Update(moduleName); err != nil {
-				fmt.Printf("failed to update %s issue; failure was: %s, skipping...\n", *issue.Title, err)
+			// The head ref is something like this:
+			// dependabot/github_actions/actions/github-script-6.0.0
+			// dependabot/go_modules/github.com/aws/aws-sdk-go-v2/service/ssm-1.27.0
+			// Which we can use to detect what kind of update we would like to perform.
+			files, err := n.Updater.Update(issue.GetBody(), pr.GetHead().GetRef())
+			if err != nil {
+				fmt.Printf("failed to update %s issue; failure was: %s, skipping...\n", issue.GetTitle(), err)
 				continue
 			}
+			modifiedFiles = append(modifiedFiles, files...)
 			count++
 			prNumbers += fmt.Sprintf("#%d\n", *issue.Number)
 		}
@@ -123,7 +129,7 @@ func (n *Bundler) Bundle() error {
 		return err
 	}
 
-	tree, err := n.getTree(ref)
+	tree, err := n.getTree(modifiedFiles, ref)
 	if err != nil {
 		fmt.Println("failed to get tree")
 		return err
@@ -165,19 +171,9 @@ func (n *Bundler) generateCommitBranch() string {
 	return fmt.Sprintf("bundler-%d", time.Now().UTC().Unix())
 }
 
-func (n *Bundler) getTree(ref *github.Reference) (*github.Tree, error) {
+func (n *Bundler) getTree(files []string, ref *github.Reference) (*github.Tree, error) {
 	// Create a tree with what to commit.
 	var entries []*github.TreeEntry
-
-	// We only ever add the mod and sum file. We never commit anything else.
-	// This prevents us from creating prs which contain unrelated changes to the update.
-	// Alternatively, we could gather a diff and see what changed and gather those.
-	// This is purely for testing purposes which is bad because it leaks for test purposes.
-	// TODO: Do this some other way.
-	var files []string
-	if !n.Test {
-		files = []string{"go.mod", "go.sum"}
-	}
 	for _, file := range files {
 		b, err := ioutil.ReadFile(file)
 		if err != nil {
@@ -239,18 +235,6 @@ func (n *Bundler) createPR(commitBranch string, description string, title string
 
 	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
 	return pr.Number, nil
-}
-
-func (n *Bundler) extractModuleName(description string) string {
-	matches := moduleNameRegexp.FindAllStringSubmatch(description, -1)
-	if len(matches) == 0 {
-		return ""
-	}
-	subMatch := matches[0]
-	if len(subMatch) < 2 {
-		return ""
-	}
-	return subMatch[1]
 }
 
 func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {

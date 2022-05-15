@@ -10,6 +10,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/Skarlso/dependabot-bundler/pkg"
+	ghau "github.com/Skarlso/dependabot-bundler/pkg/providers/github_action_updater"
+	mu "github.com/Skarlso/dependabot-bundler/pkg/providers/modules_updater"
 )
 
 var (
@@ -51,8 +53,13 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
+	// setup GitHub actions updater
+	actionsUpdater := ghau.NewGithubActionUpdater()
+
+	// setup modules updater
+	updater := mu.NewGoUpdater(actionsUpdater)
+
 	client := github.NewClient(tc)
-	updater := pkg.NewGoUpdater()
 	bundler := pkg.NewBundler(pkg.Config{
 		Labels:       rootArgs.labels,
 		TargetBranch: rootArgs.targetBranch,
@@ -73,7 +80,7 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 	}
 }
 
-// Execute runs the main krok command.
+// Execute runs the main bundler command.
 func Execute() error {
 	return rootCmd.Execute()
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Skarlso/dependabot-bundler/pkg"
 	"github.com/Skarlso/dependabot-bundler/pkg/fakes"
+	providerFakes "github.com/Skarlso/dependabot-bundler/pkg/providers/fakes"
 )
 
 func TestBundler(t *testing.T) {
@@ -15,7 +16,7 @@ func TestBundler(t *testing.T) {
 	fakeRepositories := &fakes.FakeRepositories{}
 	fakeIssues := &fakes.FakeIssues{}
 	fakePulls := &fakes.FakePullRequests{}
-	fakeUpdater := &fakes.FakeUpdater{}
+	fakeUpdater := &providerFakes.FakeUpdater{}
 	bundler := pkg.NewBundler(pkg.Config{
 		Labels:       "label1,label2",
 		TargetBranch: "main",
@@ -101,13 +102,19 @@ func TestBundler(t *testing.T) {
 		HTMLURL: github.String("https://github.com/test/test/pulls/1"),
 		Number:  github.Int(1),
 	}, nil, nil)
+	fakePulls.GetReturns(&github.PullRequest{
+		Head: &github.PullRequestBranch{
+			Ref: github.String("dependabot/go_modules/github.com/aws/aws-sdk-go-v2/service/ssm-1.27.0"),
+		},
+	}, nil, nil)
 
 	fakeIssues.AddLabelsToIssueReturns(nil, nil, nil)
 
 	assert.NoError(t, bundler.Bundle())
 
-	moduleName := fakeUpdater.UpdateArgsForCall(0)
-	assert.Equal(t, "github.com/test/test", moduleName)
+	body, branch := fakeUpdater.UpdateArgsForCall(0)
+	assert.Equal(t, "Bumps [github.com/test/test](github.com/test/test)", body)
+	assert.Equal(t, "dependabot/go_modules/github.com/aws/aws-sdk-go-v2/service/ssm-1.27.0", branch)
 	_, owner, repo, number, labels := fakeIssues.AddLabelsToIssueArgsForCall(0)
 	assert.Equal(t, "owner", owner)
 	assert.Equal(t, "repo", repo)
