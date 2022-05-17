@@ -1,7 +1,14 @@
 # Dependabot bundler
 
 Bundler will gather all PRs which were created by `app/dependabot` user. Then, it will apply `go get -u` using the
-modules in the prs that it found. Once all updates have been applied, it will create a single commit and a PR.
+modules in the prs that it found. It will do that instead of using git magic to combine the prs to avoid the following
+problems:
+
+- merge conflicts
+- dependencies getting out of sync ( something updating to x while the next downgrades it to y or vica-versa )
+- dependency chain conflicts
+
+Once all updates have been applied, it will create a single commit and a PR.
 
 It doesn't attempt to merge PRs causing various merge conflicts. It will basically just do what dependabot would do
 but apply it separately as a composite update.
