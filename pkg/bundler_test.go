@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/Skarlso/dependabot-bundler/pkg"
-	"github.com/Skarlso/dependabot-bundler/pkg/fakes"
+	"github.com/Skarlso/dependabot-bundler/pkg/api/fakes"
 	providerFakes "github.com/Skarlso/dependabot-bundler/pkg/providers/fakes"
 )
 

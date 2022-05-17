@@ -52,14 +52,14 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 		&oauth2.Token{AccessToken: rootArgs.token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
 
 	// setup GitHub actions updater
-	actionsUpdater := ghau.NewGithubActionUpdater()
+	actionsUpdater := ghau.NewGithubActionUpdater(client.Git)
 
 	// setup modules updater
 	updater := mu.NewGoUpdater(actionsUpdater)
 
-	client := github.NewClient(tc)
 	bundler := pkg.NewBundler(pkg.Config{
 		Labels:       rootArgs.labels,
 		TargetBranch: rootArgs.targetBranch,

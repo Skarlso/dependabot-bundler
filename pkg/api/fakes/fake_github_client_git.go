@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Skarlso/dependabot-bundler/pkg"
+	"github.com/Skarlso/dependabot-bundler/pkg/api"
 	"github.com/google/go-github/v43/github"
 )
 
@@ -495,4 +495,4 @@ func (fake *FakeGit) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ pkg.Git = new(FakeGit)
+var _ api.Git = new(FakeGit)

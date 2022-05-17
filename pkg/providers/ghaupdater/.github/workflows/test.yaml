@@ -22,6 +22,8 @@ jobs:
             ~/.cache/go-build/
             ~/go/pkg/mod/
           key: ${{ hashFiles('go.sum') }}
+      - name: Some other tag pinning to a SHA
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
       - name: Setup lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.45.2
