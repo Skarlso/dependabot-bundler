@@ -83,5 +83,5 @@ and apply them to the created PR.
 ## In Progress features
 
 - [x] define custom labels on the created PR
-- [ ] define custom description
-- [ ] define custom title
+- [-] define custom description -> decided not to add this unless there is need for it.
+- [x] define custom title

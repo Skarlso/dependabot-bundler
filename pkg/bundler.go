@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-github/v43/github"
 
 	"github.com/Skarlso/dependabot-bundler/pkg/api"
+	"github.com/Skarlso/dependabot-bundler/pkg/logger"
 	"github.com/Skarlso/dependabot-bundler/pkg/providers"
 )
 
@@ -28,14 +29,14 @@ type Config struct {
 	BotName      string
 	AuthorName   string
 	AuthorEmail  string
+	PRTitle      string
+	Logger       logger.Logger
 
 	Issues       api.Issues
 	Pulls        api.PullRequests
 	Git          api.Git
 	Updater      providers.Updater
 	Repositories api.Repositories
-
-	Test bool
 }
 
 // NewBundler creates a new Bundler.
@@ -47,7 +48,7 @@ func NewBundler(cfg Config) *Bundler {
 
 // Bundle performs the action which bundles together dependabot PRs.
 func (n *Bundler) Bundle() error {
-	fmt.Println("attempting to bundle PRs")
+	n.Logger.Log("attempting to bundle PRs\n")
 	issues, response, err := n.Issues.ListByRepo(context.Background(), n.Owner, n.Repo, &github.IssueListByRepoOptions{
 		State:   "open",
 		Creator: n.BotName,
@@ -68,7 +69,7 @@ func (n *Bundler) Bundle() error {
 		if issue.PullRequestLinks != nil {
 			pr, _, err := n.Pulls.Get(context.Background(), n.Owner, n.Repo, issue.GetNumber())
 			if err != nil {
-				fmt.Printf("failed to get pull request for number %d with error %s, skipping \n", issue.GetNumber(), err)
+				n.Logger.Debug("failed to get pull request for number %d with error %s, skipping \n", issue.GetNumber(), err)
 				continue
 			}
 			// The head ref is something like this:
@@ -77,7 +78,7 @@ func (n *Bundler) Bundle() error {
 			// Which we can use to detect what kind of update we would like to perform.
 			files, err := n.Updater.Update(issue.GetBody(), pr.GetHead().GetRef())
 			if err != nil {
-				fmt.Printf("failed to update %s issue; failure was: %s, skipping...\n", issue.GetTitle(), err)
+				n.Logger.Debug("failed to update %s issue; failure was: %s, skipping...\n", issue.GetTitle(), err)
 				continue
 			}
 			modifiedFiles = append(modifiedFiles, files...)
@@ -87,40 +88,40 @@ func (n *Bundler) Bundle() error {
 	}
 
 	if count == 0 {
-		fmt.Println("no pull requests found to bundle, exiting...")
+		n.Logger.Log("no pull requests found to bundle, exiting...")
 		return nil
 	}
-	fmt.Printf("gathered %d pull requests, opening PR...\n", count)
+	n.Logger.Log("gathered %d pull requests, opening PR...\n", count)
 	// open a PR with the modifications
 	branch, ref, err := n.getRef()
 	if err != nil {
-		fmt.Println("failed to create ref")
+		n.Logger.Log("failed to create ref\n")
 		return err
 	}
 
 	tree, err := n.getTree(modifiedFiles, ref)
 	if err != nil {
-		fmt.Println("failed to get tree")
+		n.Logger.Log("failed to get tree\n")
 		return err
 	}
 
 	if err := n.pushCommit(ref, tree); err != nil {
-		fmt.Println("failed to push commit")
+		n.Logger.Log("failed to push commit\n")
 		return err
 	}
 
-	number, err := n.createPR(branch, "Bundling together prs: \n"+prNumbers, "Bundling dependabot PRs")
+	number, err := n.createPR(branch, "Contains the following PRs: \n"+prNumbers, n.PRTitle)
 	if err != nil {
-		fmt.Println("failed to create PR")
+		n.Logger.Log("failed to create PR\n")
 		return err
 	}
 
 	if err := n.addLabel(number); err != nil {
-		fmt.Println("failed to apply labels to the PR ", n.Labels)
+		n.Logger.Log("failed to apply labels to the PR: %s\n", n.Labels)
 		return err
 	}
 
-	fmt.Println("PR opened. Thank you for using Bundler, goodbye.")
+	n.Logger.Log("PR opened. Thank you for using Bundler, goodbye.\n")
 	return nil
 }
 
@@ -209,16 +210,16 @@ func (n *Bundler) createPR(commitBranch string, description string, title string
 func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {
 	content, bodyErr := io.ReadAll(body)
 	if bodyErr != nil {
-		fmt.Println("failed to read body from github response")
+		n.Logger.Log("failed to read body from github response\n")
 		return bodyErr
 	}
 	defer func() {
 		if err := body.Close(); err != nil {
-			fmt.Println("failed to close body")
+			n.Logger.Log("failed to close body\n")
 		}
 	}()
 
-	fmt.Printf("got response from github: %s\n", string(content))
+	n.Logger.Log("got response from github: %s\n", string(content))
 	return err
 }
 

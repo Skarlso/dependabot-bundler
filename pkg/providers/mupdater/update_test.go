@@ -4,11 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/Skarlso/dependabot-bundler/pkg/logger"
 )
 
 func TestNewGoUpdater(t *testing.T) {
 	t.Skip("mock the executer...")
-	mu := NewGoUpdater(nil)
+	mu := NewGoUpdater(&logger.QuiteLogger{}, nil)
 	files, err := mu.Update("Bumps [github.com/actions/checkout](https://github.com/Skarlso/dependabot) from 2 to 3", "go_modules")
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"go.mod", "go.sum"}, files)
