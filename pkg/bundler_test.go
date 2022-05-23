@@ -8,6 +8,7 @@ import (
 
 	"github.com/Skarlso/dependabot-bundler/pkg"
 	"github.com/Skarlso/dependabot-bundler/pkg/api/fakes"
+	"github.com/Skarlso/dependabot-bundler/pkg/logger"
 	providerFakes "github.com/Skarlso/dependabot-bundler/pkg/providers/fakes"
 )
 
@@ -30,7 +31,7 @@ func TestBundler(t *testing.T) {
 		Git:          fakeGit,
 		Updater:      fakeUpdater,
 		Repositories: fakeRepositories,
-		Test:         true,
+		Logger:       &logger.QuiteLogger{},
 	})
 
 	// setup
