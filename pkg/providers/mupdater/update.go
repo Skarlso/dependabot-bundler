@@ -40,6 +40,11 @@ func (g *GoUpdater) Update(body, branch string) ([]string, error) {
 		g.Logger.Debug("update failed, output from command: %s; error: %s", string(output), err)
 		return nil, err
 	}
+	cmd = exec.Command("go", "mod", "tidy")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		g.Logger.Debug("go mod tidy failed, output from command: %s; error: %s", string(output), err)
+		return nil, err
+	}
 	return []string{"go.mod", "go.sum"}, nil
 }
 
