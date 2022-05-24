@@ -64,7 +64,7 @@ func (n *Bundler) Bundle() error {
 	var (
 		count         int
 		prNumbers     string
-		modifiedFiles []string
+		modifiedFiles map[string]struct{} // used for deduplication
 	)
 	for _, issue := range issues {
 		if issue.PullRequestLinks != nil {
@@ -82,7 +82,9 @@ func (n *Bundler) Bundle() error {
 				n.Logger.Debug("failed to update %s issue; failure was: %s, skipping...\n", issue.GetTitle(), err)
 				continue
 			}
-			modifiedFiles = append(modifiedFiles, files...)
+			for _, f := range files {
+				modifiedFiles[f] = struct{}{}
+			}
 			count++
 			prNumbers += fmt.Sprintf("#%d\n", *issue.Number)
 		}
@@ -146,10 +148,10 @@ func (n *Bundler) generateCommitBranch() string {
 	return fmt.Sprintf("bundler-%d", time.Now().UTC().Unix())
 }
 
-func (n *Bundler) getTree(files []string, ref *github.Reference) (*github.Tree, error) {
+func (n *Bundler) getTree(files map[string]struct{}, ref *github.Reference) (*github.Tree, error) {
 	// Create a tree with what to commit.
 	var entries []*github.TreeEntry
-	for _, file := range files {
+	for file := range files {
 		b, err := ioutil.ReadFile(file)
 		if err != nil {
 			return nil, err
