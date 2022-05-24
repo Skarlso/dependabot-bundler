@@ -13,6 +13,7 @@ import (
 	"github.com/Skarlso/dependabot-bundler/pkg/logger"
 	ghau "github.com/Skarlso/dependabot-bundler/pkg/providers/ghaupdater"
 	mu "github.com/Skarlso/dependabot-bundler/pkg/providers/mupdater"
+	"github.com/Skarlso/dependabot-bundler/pkg/providers/runner"
 )
 
 var (
@@ -69,7 +70,8 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 	actionsUpdater := ghau.NewGithubActionUpdater(client.Git)
 
 	// setup modules updater
-	updater := mu.NewGoUpdater(log, actionsUpdater)
+	osRunner := runner.NewOsRunner()
+	updater := mu.NewGoUpdater(log, actionsUpdater, osRunner)
 
 	bundler := pkg.NewBundler(pkg.Config{
 		Labels:       rootArgs.labels,
@@ -86,6 +88,7 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 		Repositories: client.Repositories,
 		Updater:      updater,
 		Logger:       log,
+		Runner:       osRunner,
 	})
 	if err := bundler.Bundle(); err != nil {
 		fmt.Printf("failed to bundle PRs: %s\n", err)

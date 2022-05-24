@@ -37,6 +37,7 @@ type Config struct {
 	Git          api.Git
 	Updater      providers.Updater
 	Repositories api.Repositories
+	Runner       providers.Runner
 }
 
 // NewBundler creates a new Bundler.
@@ -63,7 +64,7 @@ func (n *Bundler) Bundle() error {
 	var (
 		count         int
 		prNumbers     string
-		modifiedFiles []string
+		modifiedFiles = make(map[string]struct{}) // used for deduplication
 	)
 	for _, issue := range issues {
 		if issue.PullRequestLinks != nil {
@@ -81,7 +82,9 @@ func (n *Bundler) Bundle() error {
 				n.Logger.Debug("failed to update %s issue; failure was: %s, skipping...\n", issue.GetTitle(), err)
 				continue
 			}
-			modifiedFiles = append(modifiedFiles, files...)
+			for _, f := range files {
+				modifiedFiles[f] = struct{}{}
+			}
 			count++
 			prNumbers += fmt.Sprintf("#%d\n", *issue.Number)
 		}
@@ -121,6 +124,13 @@ func (n *Bundler) Bundle() error {
 		return err
 	}
 
+	// clean up each modified file
+	for k := range modifiedFiles {
+		if output, err := n.Runner.Run("git", "checkout", k); err != nil {
+			n.Logger.Log("failed to run clean, skipping... return error and output of clean command: %s; %s", err.Error(), string(output))
+		}
+	}
+
 	n.Logger.Log("PR opened. Thank you for using Bundler, goodbye.\n")
 	return nil
 }
@@ -141,10 +151,10 @@ func (n *Bundler) generateCommitBranch() string {
 	return fmt.Sprintf("bundler-%d", time.Now().UTC().Unix())
 }
 
-func (n *Bundler) getTree(files []string, ref *github.Reference) (*github.Tree, error) {
+func (n *Bundler) getTree(files map[string]struct{}, ref *github.Reference) (*github.Tree, error) {
 	// Create a tree with what to commit.
 	var entries []*github.TreeEntry
-	for _, file := range files {
+	for file := range files {
 		b, err := ioutil.ReadFile(file)
 		if err != nil {
 			return nil, err
