@@ -64,7 +64,7 @@ func (n *Bundler) Bundle() error {
 	var (
 		count         int
 		prNumbers     string
-		modifiedFiles map[string]struct{} // used for deduplication
+		modifiedFiles = make(map[string]struct{}) // used for deduplication
 	)
 	for _, issue := range issues {
 		if issue.PullRequestLinks != nil {
@@ -124,8 +124,11 @@ func (n *Bundler) Bundle() error {
 		return err
 	}
 
-	if output, err := n.Runner.Run("git", "clean", "-f"); err != nil {
-		n.Logger.Log("failed to run clean, skipping... return error and output of clean command: %s; %s", err.Error(), string(output))
+	// clean up each modified file
+	for k := range modifiedFiles {
+		if output, err := n.Runner.Run("git", "checkout", k); err != nil {
+			n.Logger.Log("failed to run clean, skipping... return error and output of clean command: %s; %s", err.Error(), string(output))
+		}
 	}
 
 	n.Logger.Log("PR opened. Thank you for using Bundler, goodbye.\n")
