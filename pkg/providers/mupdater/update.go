@@ -2,7 +2,6 @@ package mupdater
 
 import (
 	"fmt"
-	"os/exec"
 	"regexp"
 	"strings"
 
@@ -16,12 +15,14 @@ var moduleNameRegexp = regexp.MustCompile(`Bumps \[(.*)\]`)
 type GoUpdater struct {
 	Next   providers.Updater
 	Logger logger.Logger
+	Runner providers.Runner
 }
 
-func NewGoUpdater(log logger.Logger, next providers.Updater) *GoUpdater {
+func NewGoUpdater(log logger.Logger, next providers.Updater, runner providers.Runner) *GoUpdater {
 	return &GoUpdater{
 		Next:   next,
 		Logger: log,
+		Runner: runner,
 	}
 }
 
@@ -35,8 +36,7 @@ func (g *GoUpdater) Update(body, branch string) ([]string, error) {
 	}
 	module := g.extractModuleName(body)
 	g.Logger.Log("updating dependency for %s\n", module)
-	cmd := exec.Command("go", "get", "-u", module)
-	if output, err := cmd.CombinedOutput(); err != nil {
+	if output, err := g.Runner.Run("go", "get", "-u", module); err != nil {
 		g.Logger.Debug("update failed, output from command: %s; error: %s", string(output), err)
 		return nil, err
 	}

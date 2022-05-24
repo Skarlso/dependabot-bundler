@@ -37,6 +37,7 @@ type Config struct {
 	Git          api.Git
 	Updater      providers.Updater
 	Repositories api.Repositories
+	Runner       providers.Runner
 }
 
 // NewBundler creates a new Bundler.
@@ -119,6 +120,10 @@ func (n *Bundler) Bundle() error {
 	if err := n.addLabel(number); err != nil {
 		n.Logger.Log("failed to apply labels to the PR: %s\n", n.Labels)
 		return err
+	}
+
+	if output, err := n.Runner.Run("git", "clean", "-f"); err != nil {
+		n.Logger.Log("failed to run clean, skipping... return error and output of clean command: %s; %s", err.Error(), string(output))
 	}
 
 	n.Logger.Log("PR opened. Thank you for using Bundler, goodbye.\n")

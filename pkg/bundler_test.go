@@ -18,6 +18,7 @@ func TestBundler(t *testing.T) {
 	fakeIssues := &fakes.FakeIssues{}
 	fakePulls := &fakes.FakePullRequests{}
 	fakeUpdater := &providerFakes.FakeUpdater{}
+	fakeRunner := &providerFakes.FakeRunner{}
 	bundler := pkg.NewBundler(pkg.Config{
 		Labels:       "label1,label2",
 		TargetBranch: "main",
@@ -32,6 +33,7 @@ func TestBundler(t *testing.T) {
 		Updater:      fakeUpdater,
 		Repositories: fakeRepositories,
 		Logger:       &logger.QuiteLogger{},
+		Runner:       fakeRunner,
 	})
 
 	// setup
