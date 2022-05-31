@@ -20,7 +20,7 @@ func TestBundler(t *testing.T) {
 	fakeUpdater := &providerFakes.FakeUpdater{}
 	fakeRunner := &providerFakes.FakeRunner{}
 	bundler := pkg.NewBundler(pkg.Config{
-		Labels:       "label1,label2",
+		Labels:       []string{"label1", "label2"},
 		TargetBranch: "main",
 		Owner:        "owner",
 		Repo:         "repo",
