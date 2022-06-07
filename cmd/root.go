@@ -27,7 +27,7 @@ var (
 		token        string
 		owner        string
 		repo         string
-		labels       string
+		labels       []string
 		targetBranch string
 		authorName   string
 		authorEmail  string
@@ -42,7 +42,7 @@ func init() {
 	flag.StringVar(&rootArgs.token, "token", "", "--token github token")
 	flag.StringVar(&rootArgs.owner, "owner", "", "--owner github organization / owner")
 	flag.StringVar(&rootArgs.repo, "repo", "", "--repo github repository")
-	flag.StringVar(&rootArgs.labels, "labels", "", "--labels a list of labels to apply to the PR")
+	flag.StringSliceVar(&rootArgs.labels, "labels", nil, "--labels a list of labels to apply to the PR")
 	flag.StringVar(&rootArgs.botName, "bot-name", "app/dependabot", "--bot-name the name of the bot, default is app/dependabot")
 	flag.StringVar(&rootArgs.authorName, "author-name", "Github Action", "--author-name name of the committer, default to Github Action")
 	flag.StringVar(&rootArgs.authorEmail, "author-email", "41898282+github-actions[bot]@users.noreply.github.com", "--author-email email address of the committer, defaults to github action's email address")

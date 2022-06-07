@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"strings"
 	"time"
 
 	"github.com/google/go-github/v43/github"
@@ -22,7 +21,7 @@ type Bundler struct {
 
 // Config contains dependencies and configuration for the Bundler.
 type Config struct {
-	Labels       string
+	Labels       []string
 	TargetBranch string
 	Owner        string
 	Repo         string
@@ -236,10 +235,9 @@ func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {
 func (n *Bundler) addLabel(number *int) error {
 	// splitting an empty string will result in a 1 len slice with the empty string in it.
 	// thus we check early.
-	if n.Labels == "" {
+	if len(n.Labels) == 0 {
 		return nil
 	}
-	labels := strings.Split(n.Labels, ",")
-	_, _, err := n.Issues.AddLabelsToIssue(context.Background(), n.Owner, n.Repo, *number, labels)
+	_, _, err := n.Issues.AddLabelsToIssue(context.Background(), n.Owner, n.Repo, *number, n.Labels)
 	return err
 }
