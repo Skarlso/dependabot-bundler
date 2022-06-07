@@ -57,6 +57,33 @@ func TestWithGitSHAPin(t *testing.T) {
 	assert.Contains(t, string(newContent), "uses: docker/metadata-action@69f6fc9d46f2f8bf0d5491e4aabe0bb8c6a4678a")
 }
 
+func TestWithGitSHAWithComment(t *testing.T) {
+	testFile := filepath.Join(".github", "workflows", "test.yaml")
+	previousContent, err := os.ReadFile(testFile)
+	assert.NoError(t, err)
+	// put back previous content
+	defer func() {
+		err = os.WriteFile(testFile, previousContent, 0777)
+		assert.NoError(t, err)
+	}()
+
+	git := &fakes.FakeGit{}
+	git.GetRefReturns(&github.Reference{
+		Ref: github.String("refs/tags/1.5.0"),
+		URL: github.String("https://github.com/skarlso/test"),
+		Object: &github.GitObject{
+			SHA: github.String("76ab977fedbeaeb32029313724a2e56a8a393548"),
+		},
+	}, &github.Response{}, nil)
+	gau := NewGithubActionUpdater(git)
+	files, err := gau.Update("Bumps [lycheeverse/lychee-action](https://github.com/lycheeverse/lychee-action) from c0d1093b783f7ad0c445884b01da0215b2da29ee to 1.5.0 blabla bla bla.", "github_actions")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{".github/workflows/test.yaml"}, files)
+	newContent, err := os.ReadFile(testFile)
+	assert.NoError(t, err)
+	assert.Contains(t, string(newContent), "uses: lycheeverse/lychee-action@76ab977fedbeaeb32029313724a2e56a8a393548")
+}
+
 func TestNameUpdateInvalidBranch(t *testing.T) {
 	git := &fakes.FakeGit{}
 	gau := NewGithubActionUpdater(git)

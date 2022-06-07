@@ -16,7 +16,7 @@ import (
 
 // don't forget to trim the `.` at the end.
 var (
-	actionNameAndVersionRegexp = regexp.MustCompile(`Bumps \[(.*)\].*from (.*) to (.*)`)
+	actionNameAndVersionRegexp = regexp.MustCompile(`Bumps \[(.*)\].*from (.*) to ([a-z|A-Z|0-9\.]+)`)
 	// this does not include the `v` since in case of a ref, there is no leading `v` after the @ sign.
 	actionNamePatter = "uses: %s@%s"
 )
@@ -64,11 +64,6 @@ func (g *GithubActionUpdater) Update(body, branch string) ([]string, error) {
 				if err != nil {
 					return fmt.Errorf("failed to read file to replace content: %w", err)
 				}
-				// skip if it does not contain the action we are updating
-				// so that we don't stage this file.
-				//if !bytes.Contains(content, []byte(actionName)) {
-				//	return nil
-				//}
 
 				// Gather what the action is pinning to. A SHA or a Tag.
 				modifiedFrom, modifiedTo, err := g.getShaOrTag(from, to, actionName, string(content))
@@ -123,7 +118,12 @@ func (g *GithubActionUpdater) getShaOrTag(from, to, actionName, content string) 
 	if len(subMatch) < 2 {
 		return "v" + from, "v" + to, nil
 	}
-	if len(subMatch[1]) == 40 {
+	match := subMatch[1]
+	if i := strings.Index(match, " "); i > -1 {
+		match = match[:i]
+	}
+
+	if len(match) == 40 {
 		split := strings.Split(actionName, "/")
 		if len(split) < 2 {
 			return "", "", fmt.Errorf("couldn't determine owner and repo from action name: %s", actionName)
@@ -137,11 +137,11 @@ func (g *GithubActionUpdater) getShaOrTag(from, to, actionName, content string) 
 				if err != nil {
 					return "", "", fmt.Errorf("failed to get tag: %w", err)
 				}
-				return subMatch[1], ref.GetObject().GetSHA(), nil
+				return match, ref.GetObject().GetSHA(), nil
 			}
 			return "", "", fmt.Errorf("failed to get tag: %w", err)
 		}
-		return subMatch[1], ref.GetObject().GetSHA(), nil
+		return match, ref.GetObject().GetSHA(), nil
 	}
 	return "v" + from, "v" + to, nil
 }
