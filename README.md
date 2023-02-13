@@ -80,6 +80,19 @@ and apply them to the created PR.
 
 ![pr4](pr_with_actions.png)
 
+## Use it as GitHub Action
+
+Dependabot Bundler is now available as a GitHub Action. To use it, simple include it as follows:
+
+```yaml
+- name: dependabot-bundler
+  uses: skarlso/dependabot-bundler@v0.0.1
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }}
+    repo: 'This repo'
+    owner: 'Me'
+```
+
 ## In Progress features
 
 - [x] define custom labels on the created PR
