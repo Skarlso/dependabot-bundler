@@ -1,0 +1,62 @@
+# action.yml
+name: 'Dependabot Bundler Action'
+description: 'A simple action to bundle your dependabot PRs into a single PR.'
+inputs:
+  token:  # id of input
+    description: 'GitHub token.'
+    required: true
+    default: ''
+  repo:
+    description: 'The repository.'
+    required: true
+    default: ''
+  owner:
+    description: 'The owner organization or user.'
+    required: true
+    default: ''
+  labels:
+    description: 'Any additional labels to apply to the created PR.'
+    required: false
+    default: ''
+  botName:
+    description: 'Name of the bot. This will be used to identify pull requests that needs to be bundled.'
+    required: false
+    default: 'app/dependabot'
+  authorName:
+    description: 'Name of user with which the PR will be created.'
+    required: false
+    default: 'Github Action'
+  authorEmail:
+    description: 'Email address of the pull request creator.'
+    required: false
+    default: '41898282+github-actions[bot]@users.noreply.github.com'
+  targetBranch:
+    description: 'The target branch to create the bundled PR against.'
+    required: false
+    default: 'main'
+  prTitle:
+    description: 'The description of the created PR.'
+    required: false
+    default: 'Dependabot Bundler PR'
+outputs:
+  timestamp:
+    description: 'The timestamp at which the message was posted. This is used to update or to reply to a message in thread'
+  channel:
+    description: 'The ID of the channel this message was posted to.'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - --token=${{ inputs.token }}
+    - --repo=${{ inputs.repo }}
+    - --owner=${{ inputs.owner }}
+    - --labels=${{ inputs.labels }}
+    - --bot-name=${{ inputs.botName }}
+    - --author-name=${{ inputs.authorName }}
+    - --author-email=${{ inputs.authorEmail }}
+    - --target-branch=${{ inputs.targetBranch }}
+    - --pr-title=${{ inputs.prTitle }}
+branding:
+  icon: "arrow-right-circle"
+  color: purple
+author: "Gergely Brautigam"

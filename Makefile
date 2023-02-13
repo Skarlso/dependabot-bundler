@@ -15,7 +15,7 @@ GO_LDFLAGS_STATIC="-s -w $(CTIMEVAR) -extldflags -static"
 
 binaries: ## Builds binaries for all supported platforms, linux, darwin
 	CGO_ENABLED=0 gox \
-		-osarch="linux/amd64 linux/arm darwin/amd64" \
+		-osarch="linux/amd64 darwin/amd64" \
 		-ldflags=${GO_LDFLAGS_STATIC} \
 		-output="$(BUILDDIR)/{{.OS}}/{{.Arch}}/$(NAME)" \
 		-tags="netgo" \
