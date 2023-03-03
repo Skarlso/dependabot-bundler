@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Skarlso/dependabot-bundler/pkg/providers/pgp"
 	"github.com/google/go-github/v43/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -33,6 +34,13 @@ var (
 		authorEmail  string
 		prTitle      string
 		verbose      bool
+		pgp          struct {
+			name       string
+			email      string
+			publicKey  string
+			privateKey string
+			bitLength  int
+		}
 	}
 )
 
@@ -49,6 +57,11 @@ func init() {
 	flag.StringVar(&rootArgs.targetBranch, "target-branch", "main", "--target-branch the branch to open the PR against")
 	flag.StringVar(&rootArgs.prTitle, "pr-title", "Dependabot Bundler PR", "--pr-title the title of the PR that will be created")
 	flag.BoolVarP(&rootArgs.verbose, "verbose", "v", false, "--verbose|-v if enabled, will output extra debug information")
+	flag.StringVar(&rootArgs.pgp.name, "signing-name", "", "--signing-name the name used for the signing key")
+	flag.StringVar(&rootArgs.pgp.email, "signing-email", "", "--signing-email the email of the signing key")
+	flag.StringVar(&rootArgs.pgp.publicKey, "signing-public-key", "", "--signing-public-key the public key of the pgp signing key")
+	flag.StringVar(&rootArgs.pgp.privateKey, "signing-private-key", "", "--signing-private-key the private key of the pgp signing key")
+	flag.IntVar(&rootArgs.pgp.bitLength, "signing-key-bit-length", 4096, "--signing-key-bit-length the length of the key")
 }
 
 // runRootCmd runs the main notifier command.
@@ -90,6 +103,18 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 		Logger:       log,
 		Runner:       osRunner,
 	})
+
+	if rootArgs.pgp.publicKey != "" {
+		signer := &pgp.Entity{
+			Name:       rootArgs.pgp.name,
+			Email:      rootArgs.pgp.email,
+			BitSize:    rootArgs.pgp.bitLength,
+			PublicKey:  []byte(rootArgs.pgp.publicKey),
+			PrivateKey: []byte(rootArgs.pgp.privateKey),
+		}
+		bundler.Signer = signer
+	}
+
 	if err := bundler.Bundle(); err != nil {
 		fmt.Printf("failed to bundle PRs: %s\n", err)
 		os.Exit(1)

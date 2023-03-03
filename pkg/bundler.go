@@ -7,11 +7,10 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/google/go-github/v43/github"
-
 	"github.com/Skarlso/dependabot-bundler/pkg/api"
 	"github.com/Skarlso/dependabot-bundler/pkg/logger"
 	"github.com/Skarlso/dependabot-bundler/pkg/providers"
+	"github.com/google/go-github/v43/github"
 )
 
 // Bundler bundles.
@@ -37,6 +36,7 @@ type Config struct {
 	Updater      providers.Updater
 	Repositories api.Repositories
 	Runner       providers.Runner
+	Signer       providers.Entity
 }
 
 // NewBundler creates a new Bundler.
@@ -187,7 +187,22 @@ func (n *Bundler) pushCommit(ref *github.Reference, tree *github.Tree) (err erro
 	date := time.Now()
 	commitMessage := "Bundling updated dependencies."
 	author := &github.CommitAuthor{Date: &date, Name: &n.AuthorName, Email: &n.AuthorEmail}
-	commit := &github.Commit{Author: author, Message: &commitMessage, Tree: tree, Parents: []*github.Commit{parent.Commit}}
+	commit := &github.Commit{
+		Author:  author,
+		Message: &commitMessage,
+		Tree:    tree,
+		Parents: []*github.Commit{parent.Commit},
+	}
+
+	// if signing key is provided...
+	if n.Signer != nil {
+		entity, err := n.Signer.GetEntity()
+		if err != nil {
+			return fmt.Errorf("failed to get entity for signing details: %w", err)
+		}
+		commit.SigningKey = entity
+	}
+
 	newCommit, _, err := n.Git.CreateCommit(context.Background(), n.Owner, n.Repo, commit)
 	if err != nil {
 		return err
