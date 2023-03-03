@@ -113,3 +113,8 @@ linters:
     - gochecknoinits
     - exhaustruct
     - goerr113
+    - govet
+    - nonamedreturns
+    - varnamelen
+    - wrapcheck
+    - staticcheck

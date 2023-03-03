@@ -14,11 +14,7 @@ import (
 	"github.com/Skarlso/dependabot-bundler/pkg/api"
 )
 
-var (
-	actionNameAndVersionRegexp = regexp.MustCompile(`Bumps \[(.*)\].*from (.*) to ([a-z|A-Z|0-9\.]+)`)
-	// this does not include the `v` since in case of a ref, there is no leading `v` after the @ sign.
-	actionNamePatter = "uses: %s@%s"
-)
+const extractFromAndToRegexp = `Bumps \[(.*)\].*from (.*) to ([a-z|A-Z|0-9\.]+)`
 
 // GithubActionUpdater gets the version for the github action being updated and replaces
 // every occurrence in every .github/workflows file that the version occurs in.
@@ -74,6 +70,8 @@ func (g *GithubActionUpdater) Update(body, branch string) ([]string, error) {
 					return fmt.Errorf("failed to get commit for tag %w", err)
 				}
 
+				// this does not include the `v` since in case of a ref, there is no leading `v` after the @ sign.
+				actionNamePatter := "uses: %s@%s"
 				content = bytes.ReplaceAll(
 					content,
 					[]byte(fmt.Sprintf(actionNamePatter, actionName, modifiedFrom)),
@@ -100,6 +98,8 @@ func (g *GithubActionUpdater) Update(body, branch string) ([]string, error) {
 }
 
 func (g *GithubActionUpdater) extractActionNameAndFromToVersion(description string) (string, string, string) {
+	actionNameAndVersionRegexp := regexp.MustCompile(extractFromAndToRegexp)
+
 	matches := actionNameAndVersionRegexp.FindAllStringSubmatch(description, -1)
 	if len(matches) == 0 {
 		return "", "", ""

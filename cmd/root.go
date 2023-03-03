@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/Skarlso/dependabot-bundler/pkg"
 	"github.com/Skarlso/dependabot-bundler/pkg/logger"
@@ -18,34 +17,35 @@ import (
 
 const defaultKeyBitLength = 4096
 
-var (
-	rootCmd = &cobra.Command{
+type rootArgsStruct struct {
+	botName      string
+	token        string
+	owner        string
+	repo         string
+	labels       []string
+	targetBranch string
+	authorName   string
+	authorEmail  string
+	prTitle      string
+	verbose      bool
+	pgp          struct {
+		name       string
+		email      string
+		publicKey  string
+		privateKey string
+		bitLength  int
+	}
+}
+
+func CreateRootCommand() *cobra.Command {
+	var rootArgs rootArgsStruct
+
+	rootCmd := &cobra.Command{
 		Use:   "root",
 		Short: "Dependabot bundler action",
-		Run:   runRootCmd,
+		RunE:  rootRunE(rootArgs),
 	}
-	rootArgs struct {
-		botName      string
-		token        string
-		owner        string
-		repo         string
-		labels       []string
-		targetBranch string
-		authorName   string
-		authorEmail  string
-		prTitle      string
-		verbose      bool
-		pgp          struct {
-			name       string
-			email      string
-			publicKey  string
-			privateKey string
-			bitLength  int
-		}
-	}
-)
 
-func init() {
 	flag := rootCmd.Flags()
 
 	// Server Configs
@@ -125,70 +125,65 @@ func init() {
 		defaultKeyBitLength,
 		"--signing-key-bit-length the length of the key",
 	)
+
+	return rootCmd
 }
 
-// runRootCmd runs the main notifier command.
-func runRootCmd(cmd *cobra.Command, args []string) {
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: rootArgs.token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
+func rootRunE(rootArgs rootArgsStruct) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		ctx := context.Background()
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: rootArgs.token},
+		)
+		tc := oauth2.NewClient(ctx, ts)
+		client := github.NewClient(tc)
 
-	// setup logger
-	var log logger.Logger = &logger.QuiteLogger{}
-	if rootArgs.verbose {
-		log = &logger.VerboseLogger{}
-	}
-
-	// setup GitHub actions updater
-	actionsUpdater := ghau.NewGithubActionUpdater(client.Git)
-
-	// setup modules updater
-	osRunner := runner.NewOsRunner()
-	updater := mu.NewGoUpdater(log, actionsUpdater, osRunner)
-
-	bundler := pkg.NewBundler(pkg.Config{
-		Labels:       rootArgs.labels,
-		TargetBranch: rootArgs.targetBranch,
-		Owner:        rootArgs.owner,
-		Repo:         rootArgs.repo,
-		BotName:      rootArgs.botName,
-		AuthorEmail:  rootArgs.authorEmail,
-		AuthorName:   rootArgs.authorName,
-		PRTitle:      rootArgs.prTitle,
-		Issues:       client.Issues,
-		Pulls:        client.PullRequests,
-		Git:          client.Git,
-		Repositories: client.Repositories,
-		Updater:      updater,
-		Logger:       log,
-		Runner:       osRunner,
-	})
-
-	if rootArgs.pgp.publicKey != "" {
-		signer := &pgp.Entity{
-			Name:       rootArgs.pgp.name,
-			Email:      rootArgs.pgp.email,
-			BitSize:    rootArgs.pgp.bitLength,
-			PublicKey:  []byte(rootArgs.pgp.publicKey),
-			PrivateKey: []byte(rootArgs.pgp.privateKey),
+		// setup logger
+		var log logger.Logger = &logger.QuiteLogger{}
+		if rootArgs.verbose {
+			log = &logger.VerboseLogger{}
 		}
-		bundler.Signer = signer
-	}
 
-	if err := bundler.Bundle(); err != nil {
-		fmt.Printf("failed to bundle PRs: %s\n", err)
-		os.Exit(1)
-	}
-}
+		// setup GitHub actions updater
+		actionsUpdater := ghau.NewGithubActionUpdater(client.Git)
 
-// Execute runs the main bundler command.
-func Execute() error {
-	if err := rootCmd.Execute(); err != nil {
-		return fmt.Errorf("failed to run command: %w", err)
-	}
+		// setup modules updater
+		osRunner := runner.NewOsRunner()
+		updater := mu.NewGoUpdater(log, actionsUpdater, osRunner)
 
-	return nil
+		bundler := pkg.NewBundler(pkg.Config{
+			Labels:       rootArgs.labels,
+			TargetBranch: rootArgs.targetBranch,
+			Owner:        rootArgs.owner,
+			Repo:         rootArgs.repo,
+			BotName:      rootArgs.botName,
+			AuthorEmail:  rootArgs.authorEmail,
+			AuthorName:   rootArgs.authorName,
+			PRTitle:      rootArgs.prTitle,
+			Issues:       client.Issues,
+			Pulls:        client.PullRequests,
+			Git:          client.Git,
+			Repositories: client.Repositories,
+			Updater:      updater,
+			Logger:       log,
+			Runner:       osRunner,
+		})
+
+		if rootArgs.pgp.publicKey != "" {
+			signer := &pgp.Entity{
+				Name:       rootArgs.pgp.name,
+				Email:      rootArgs.pgp.email,
+				BitSize:    rootArgs.pgp.bitLength,
+				PublicKey:  []byte(rootArgs.pgp.publicKey),
+				PrivateKey: []byte(rootArgs.pgp.privateKey),
+			}
+			bundler.Signer = signer
+		}
+
+		if err := bundler.Bundle(); err != nil {
+			return fmt.Errorf("failed to execute bundler: %w", err)
+		}
+
+		return nil
+	}
 }

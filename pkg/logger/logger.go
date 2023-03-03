@@ -12,8 +12,7 @@ type Logger interface {
 }
 
 // VerboseLogger logs debug messages.
-type VerboseLogger struct {
-}
+type VerboseLogger struct{}
 
 // Log just logs normal messages.
 func (*VerboseLogger) Log(message string, args ...any) {
@@ -26,8 +25,7 @@ func (*VerboseLogger) Debug(message string, args ...any) {
 }
 
 // QuiteLogger 's LogDebug is ignored.
-type QuiteLogger struct {
-}
+type QuiteLogger struct{}
 
 // Log just logs normal messages.
 func (*QuiteLogger) Log(message string, args ...any) {
