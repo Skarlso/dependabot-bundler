@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/Skarlso/dependabot-bundler/pkg/api"
@@ -12,6 +12,8 @@ import (
 	"github.com/Skarlso/dependabot-bundler/pkg/providers"
 	"github.com/google/go-github/v43/github"
 )
+
+const defaultNumberOfItemsPerPage = 100
 
 // Bundler bundles.
 type Bundler struct {
@@ -49,11 +51,12 @@ func NewBundler(cfg Config) *Bundler {
 // Bundle performs the action which bundles together dependabot PRs.
 func (n *Bundler) Bundle() error {
 	n.Logger.Log("attempting to bundle PRs\n")
+
 	issues, response, err := n.Issues.ListByRepo(context.Background(), n.Owner, n.Repo, &github.IssueListByRepoOptions{
 		State:   "open",
 		Creator: n.BotName,
 		ListOptions: github.ListOptions{
-			PerPage: 100,
+			PerPage: defaultNumberOfItemsPerPage,
 		},
 	})
 	if err != nil {
@@ -65,11 +68,13 @@ func (n *Bundler) Bundle() error {
 		prNumbers     string
 		modifiedFiles = make(map[string]struct{}) // used for deduplication
 	)
+
 	for _, issue := range issues {
 		if issue.PullRequestLinks != nil {
 			pr, _, err := n.Pulls.Get(context.Background(), n.Owner, n.Repo, issue.GetNumber())
 			if err != nil {
 				n.Logger.Debug("failed to get pull request for number %d with error %s, skipping \n", issue.GetNumber(), err)
+
 				continue
 			}
 			// The head ref is something like this:
@@ -79,71 +84,98 @@ func (n *Bundler) Bundle() error {
 			files, err := n.Updater.Update(issue.GetBody(), pr.GetHead().GetRef())
 			if err != nil {
 				n.Logger.Debug("failed to update %s issue; failure was: %s, skipping...\n", issue.GetTitle(), err)
+
 				continue
 			}
+
 			for _, f := range files {
 				modifiedFiles[f] = struct{}{}
 			}
 			count++
+
 			prNumbers += fmt.Sprintf("#%d\n", *issue.Number)
 		}
 	}
 
 	if count == 0 {
 		n.Logger.Log("no pull requests found to bundle, exiting...")
+
 		return nil
 	}
+
 	n.Logger.Log("gathered %d pull requests, opening PR...\n", count)
 	// open a PR with the modifications
 	branch, ref, err := n.getRef()
 	if err != nil {
 		n.Logger.Log("failed to create ref\n")
-		return err
+
+		return fmt.Errorf("failed to create ref: %w", err)
 	}
 
 	tree, err := n.getTree(modifiedFiles, ref)
 	if err != nil {
 		n.Logger.Log("failed to get tree\n")
-		return err
+
+		return fmt.Errorf("failed to get tree: %w", err)
 	}
 
 	if err := n.pushCommit(ref, tree); err != nil {
 		n.Logger.Log("failed to push commit\n")
-		return err
+
+		return fmt.Errorf("failed to push commit: %w", err)
 	}
 
 	number, err := n.createPR(branch, "Contains the following PRs: \n"+prNumbers, n.PRTitle)
 	if err != nil {
 		n.Logger.Log("failed to create PR\n")
-		return err
+
+		return fmt.Errorf("failed to create pr: %w", err)
 	}
 
 	if err := n.addLabel(number); err != nil {
 		n.Logger.Log("failed to apply labels to the PR: %s\n", n.Labels)
-		return err
+
+		return fmt.Errorf("failed to add labels: %w", err)
 	}
 
 	// clean up each modified file
 	for k := range modifiedFiles {
 		if output, err := n.Runner.Run("git", "checkout", k); err != nil {
-			n.Logger.Log("failed to run clean, skipping... return error and output of clean command: %s; %s", err.Error(), string(output))
+			n.Logger.Log("failed to run clean, skipping... return error and output of clean command: %s; %s",
+				err.Error(), string(output))
 		}
 	}
 
 	n.Logger.Log("PR opened. Thank you for using Bundler, goodbye.\n")
+
 	return nil
 }
 
-func (n *Bundler) getRef() (branch string, ref *github.Reference, err error) {
-	var baseRef *github.Reference
+func (n *Bundler) getRef() (string, *github.Reference, error) {
+	var (
+		ref     *github.Reference
+		err     error
+		baseRef *github.Reference
+	)
+
 	if baseRef, _, err = n.Git.GetRef(context.Background(), n.Owner, n.Repo, "refs/heads/"+n.TargetBranch); err != nil {
-		return "", nil, err
+		return "", nil, fmt.Errorf("failed to get ref: %w", err)
 	}
+
 	// random generate commit Branch
 	commitBranch := n.generateCommitBranch()
-	newRef := &github.Reference{Ref: github.String("refs/heads/" + commitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
+
+	newRef := &github.Reference{
+		Ref:    github.String("refs/heads/" + commitBranch),
+		Object: &github.GitObject{SHA: baseRef.Object.SHA},
+	}
+
 	ref, _, err = n.Git.CreateRef(context.Background(), n.Owner, n.Repo, newRef)
-	return commitBranch, ref, err
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to create ref: %w", err)
+	}
+
+	return commitBranch, ref, nil
 }
 
 func (n *Bundler) generateCommitBranch() string {
@@ -153,24 +185,30 @@ func (n *Bundler) generateCommitBranch() string {
 func (n *Bundler) getTree(files map[string]struct{}, ref *github.Reference) (*github.Tree, error) {
 	// Create a tree with what to commit.
 	var entries []*github.TreeEntry
+
 	for file := range files {
-		b, err := ioutil.ReadFile(file)
+		content, err := os.ReadFile(file)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to read file: %w", err)
 		}
+
 		entries = append(
 			entries,
 			&github.TreeEntry{
 				Path:    github.String(file),
 				Type:    github.String("blob"),
-				Content: github.String(string(b)),
+				Content: github.String(string(content)),
 				Mode:    github.String("100644"),
 			},
 		)
 	}
 
 	tree, _, err := n.Git.CreateTree(context.Background(), n.Owner, n.Repo, *ref.Object.SHA, entries)
-	return tree, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tree: %w", err)
+	}
+
+	return tree, nil
 }
 
 // pushCommit creates the commit in the given reference using the given tree.
@@ -178,7 +216,7 @@ func (n *Bundler) pushCommit(ref *github.Reference, tree *github.Tree) (err erro
 	// Get the parent commit to attach the commit to.
 	parent, _, err := n.Repositories.GetCommit(context.Background(), n.Owner, n.Repo, *ref.Object.SHA, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get commit: %w", err)
 	}
 	// This is not always populated, but is needed.
 	parent.Commit.SHA = parent.SHA
@@ -200,17 +238,21 @@ func (n *Bundler) pushCommit(ref *github.Reference, tree *github.Tree) (err erro
 		if err != nil {
 			return fmt.Errorf("failed to get entity for signing details: %w", err)
 		}
+
 		commit.SigningKey = entity
 	}
 
 	newCommit, _, err := n.Git.CreateCommit(context.Background(), n.Owner, n.Repo, commit)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create commit: %w", err)
 	}
 
 	ref.Object.SHA = newCommit.SHA
-	_, _, err = n.Git.UpdateRef(context.Background(), n.Owner, n.Repo, ref, false)
-	return err
+	if _, _, err = n.Git.UpdateRef(context.Background(), n.Owner, n.Repo, ref, false); err != nil {
+		return fmt.Errorf("failed to update ref: %w", err)
+	}
+
+	return nil
 }
 
 func (n *Bundler) createPR(commitBranch string, description string, title string) (*int, error) {
@@ -222,21 +264,24 @@ func (n *Bundler) createPR(commitBranch string, description string, title string
 		MaintainerCanModify: github.Bool(true),
 	}
 
-	pr, _, err := n.Pulls.Create(context.Background(), n.Owner, n.Repo, newPR)
+	createdPR, _, err := n.Pulls.Create(context.Background(), n.Owner, n.Repo, newPR)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create pull request: %w", err)
 	}
 
-	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
-	return pr.Number, nil
+	fmt.Printf("PR created: %s\n", createdPR.GetHTMLURL())
+
+	return createdPR.Number, nil
 }
 
 func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {
 	content, bodyErr := io.ReadAll(body)
 	if bodyErr != nil {
 		n.Logger.Log("failed to read body from github response\n")
+
 		return bodyErr
 	}
+
 	defer func() {
 		if err := body.Close(); err != nil {
 			n.Logger.Log("failed to close body\n")
@@ -244,7 +289,8 @@ func (n *Bundler) logErrorWithBody(err error, body io.ReadCloser) error {
 	}()
 
 	n.Logger.Log("got response from github: %s\n", string(content))
-	return err
+
+	return fmt.Errorf("failed to log response body: %w", err)
 }
 
 func (n *Bundler) addLabel(number *int) error {
@@ -253,6 +299,10 @@ func (n *Bundler) addLabel(number *int) error {
 	if len(n.Labels) == 0 {
 		return nil
 	}
-	_, _, err := n.Issues.AddLabelsToIssue(context.Background(), n.Owner, n.Repo, *number, n.Labels)
-	return err
+
+	if _, _, err := n.Issues.AddLabelsToIssue(context.Background(), n.Owner, n.Repo, *number, n.Labels); err != nil {
+		return fmt.Errorf("failed to add lables to issue: %w", err)
+	}
+
+	return nil
 }

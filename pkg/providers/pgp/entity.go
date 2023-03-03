@@ -10,6 +10,12 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 )
 
+const (
+	defaultBitSize          = 4096
+	defaultCompressionLevel = 9
+	oneYear                 = 86400 * 365
+)
+
 // Entity defines an openpgp signer.
 type Entity struct {
 	Name       string
@@ -26,12 +32,15 @@ func (e *Entity) GetEntity() (*openpgp.Entity, error) {
 	}
 
 	var privKey *packet.PrivateKey
+
 	if len(e.PrivateKey) > 0 {
 		privateKeyPacket, err := e.getKeyPacket(e.PrivateKey)
 		if err != nil {
 			return nil, err
 		}
+
 		var ok bool
+
 		privKey, ok = privateKeyPacket.(*packet.PrivateKey)
 		if !ok {
 			return nil, fmt.Errorf("private key is not of the right format")
@@ -53,9 +62,9 @@ func (e *Entity) createEntityFromKeys(pubKey *packet.PublicKey, privKey *packet.
 		DefaultCipher:          packet.CipherAES256,
 		DefaultCompressionAlgo: packet.CompressionZLIB,
 		CompressionConfig: &packet.CompressionConfig{
-			Level: 9,
+			Level: defaultCompressionLevel,
 		},
-		RSABits: 4096,
+		RSABits: defaultBitSize,
 	}
 	currentTime := config.Now()
 	uid := packet.NewUserId("", "", "")
@@ -65,7 +74,7 @@ func (e *Entity) createEntityFromKeys(pubKey *packet.PublicKey, privKey *packet.
 		PrivateKey: privKey,
 		Identities: make(map[string]*openpgp.Identity),
 	}
-	isPrimaryId := false
+	isPrimaryID := false
 
 	oe.Identities[uid.Id] = &openpgp.Identity{
 		Name:   uid.Name,
@@ -75,7 +84,7 @@ func (e *Entity) createEntityFromKeys(pubKey *packet.PublicKey, privKey *packet.
 			SigType:      packet.SigTypePositiveCert,
 			PubKeyAlgo:   packet.PubKeyAlgoRSA,
 			Hash:         config.Hash(),
-			IsPrimaryId:  &isPrimaryId,
+			IsPrimaryId:  &isPrimaryID,
 			FlagsValid:   true,
 			FlagSign:     true,
 			FlagCertify:  true,
@@ -83,7 +92,7 @@ func (e *Entity) createEntityFromKeys(pubKey *packet.PublicKey, privKey *packet.
 		},
 	}
 
-	keyLifetimeSecs := uint32(86400 * 365)
+	keyLifetimeSecs := uint32(oneYear)
 
 	oe.Subkeys = make([]openpgp.Subkey, 1)
 	oe.Subkeys[0] = openpgp.Subkey{
@@ -102,17 +111,20 @@ func (e *Entity) createEntityFromKeys(pubKey *packet.PublicKey, privKey *packet.
 			KeyLifetimeSecs:           &keyLifetimeSecs,
 		},
 	}
+
 	return &oe, nil
 }
 
 func (e *Entity) getKeyPacket(key []byte) (packet.Packet, error) {
 	keyReader := bytes.NewReader(key)
+
 	block, err := armor.Decode(keyReader)
 	if err != nil {
 		return nil, err
 	}
 
 	packetReader := packet.NewReader(block.Body)
+
 	pkt, err := packetReader.Next()
 	if err != nil {
 		return nil, err
