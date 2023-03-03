@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/go-github/v43/github"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/Skarlso/dependabot-bundler/pkg"
 	"github.com/Skarlso/dependabot-bundler/pkg/api/fakes"
@@ -113,7 +114,7 @@ func TestBundler(t *testing.T) {
 
 	fakeIssues.AddLabelsToIssueReturns(nil, nil, nil)
 
-	assert.NoError(t, bundler.Bundle())
+	require.NoError(t, bundler.Bundle())
 
 	body, branch := fakeUpdater.UpdateArgsForCall(0)
 	assert.Equal(t, "Bumps [github.com/test/test](github.com/test/test)", body)

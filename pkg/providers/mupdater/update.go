@@ -32,14 +32,24 @@ func (g *GoUpdater) Update(body, branch string) ([]string, error) {
 		if g.Next == nil {
 			return nil, fmt.Errorf("no Next updater defined")
 		}
-		return g.Next.Update(body, branch)
+
+		update, err := g.Next.Update(body, branch)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update: %w", err)
+		}
+
+		return update, nil
 	}
+
 	module := g.extractModuleName(body)
 	g.Logger.Log("updating dependency for %s\n", module)
+
 	if output, err := g.Runner.Run("go", "get", "-u", module); err != nil {
 		g.Logger.Debug("update failed, output from command: %s; error: %s", string(output), err)
-		return nil, err
+
+		return nil, fmt.Errorf("failed to run go get: %w", err)
 	}
+
 	return []string{"go.mod", "go.sum"}, nil
 }
 
@@ -48,9 +58,13 @@ func (g *GoUpdater) extractModuleName(description string) string {
 	if len(matches) == 0 {
 		return ""
 	}
+
 	subMatch := matches[0]
-	if len(subMatch) < 2 {
+
+	const moduleNameIndex = 2
+	if len(subMatch) < moduleNameIndex {
 		return ""
 	}
+
 	return subMatch[1]
 }
