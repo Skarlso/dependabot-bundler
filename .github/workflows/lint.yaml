@@ -1,11 +1,11 @@
-name: Test
+name: Lint
 
 on:
   pull_request: {}
 
 jobs:
   test:
-    name: Test
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -15,6 +15,5 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version-file: '${{ github.workspace }}/go.mod'
-      - name: test
-        run: |
-          make test
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3

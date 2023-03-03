@@ -23,18 +23,18 @@ binaries: ## Builds binaries for all supported platforms, linux, darwin
 
 ##@ Testing
 
-test: lint ## Lints Krok then runs all tests
+test: ## runs all tests
 	go test -count=1 ./...
 
 clean: ## Runs go clean
 	go clean -i
 
-lint: ## Runs golangci-lint on Krok
+lint: ## Runs golangci-lint
 	golangci-lint run ./...
 
 ##@ Docker
 
-docker_image: ## Creates a docker image for Krok. Requires `image` and `version` variables on command line
+docker_image: ## Creates a docker image for bundler. Requires `image` and `version` variables on command line
 	docker build -t $(image):$(version) .
 
 ##@ Utilities
