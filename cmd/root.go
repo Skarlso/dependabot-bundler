@@ -184,6 +184,7 @@ func rootRunE(rootArgs *rootArgsStruct) func(cmd *cobra.Command, args []string) 
 				BitSize:    rootArgs.pgp.bitLength,
 				PublicKey:  []byte(rootArgs.pgp.publicKey),
 				PrivateKey: []byte(rootArgs.pgp.privateKey),
+				Passphrase: []byte(rootArgs.pgp.passphrase),
 			}
 			bundler.Signer = signer
 		}
