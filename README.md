@@ -93,8 +93,20 @@ Dependabot Bundler is now available as a GitHub Action. To use it, simple includ
     owner: 'Me'
 ```
 
-## In Progress features
+## Commit signing
 
-- [x] define custom labels on the created PR
-- [-] define custom description -> decided not to add this unless there is need for it.
-- [x] define custom title
+To sign a commit made by the bundler call it with the following parameters:
+
+```
+        dependabot-bundler \
+          --token ${{ secrets.GITHUB_TOKEN }} \
+          --repo test \
+          --owner owner \
+          --signing-public-key "${{ secrets.GPG_SIGN }}" \
+          --signing-private-key "${{ secrets.GPG_SECRET_SIGN }}" \
+          --signing-key-passphrase "${{ secrets.GPG_KEY_PASSPHRASE }}" \
+          --signing-name <sign-name> \
+          --signing-email <sign-email> \
+          --author-name <author-name> \
+          --author-email <author-email>
+```
