@@ -26,9 +26,11 @@ type Entity struct {
 }
 
 func (e *Entity) GetEntity() (*openpgp.Entity, error) {
+	fmt.Println("debug: ", e)
+
 	publicKeyPacket, err := e.getKeyPacket(e.PublicKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get public key: %w", err)
 	}
 
 	var privKey *packet.PrivateKey
@@ -36,7 +38,7 @@ func (e *Entity) GetEntity() (*openpgp.Entity, error) {
 	if len(e.PrivateKey) > 0 {
 		privateKeyPacket, err := e.getKeyPacket(e.PrivateKey)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get private key: %w", err)
 		}
 
 		var ok bool
