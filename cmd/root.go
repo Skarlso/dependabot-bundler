@@ -38,7 +38,7 @@ type rootArgsStruct struct {
 }
 
 func CreateRootCommand() *cobra.Command {
-	var rootArgs rootArgsStruct
+	rootArgs := &rootArgsStruct{}
 
 	rootCmd := &cobra.Command{
 		Use:   "root",
@@ -130,7 +130,7 @@ func CreateRootCommand() *cobra.Command {
 	return rootCmd
 }
 
-func rootRunE(rootArgs rootArgsStruct) func(cmd *cobra.Command, args []string) error {
+func rootRunE(rootArgs *rootArgsStruct) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		ts := oauth2.StaticTokenSource(
