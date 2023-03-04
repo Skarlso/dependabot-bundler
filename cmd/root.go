@@ -43,7 +43,6 @@ func CreateRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "root",
 		Short: "Dependabot bundler action",
-		RunE:  rootRunE(rootArgs),
 	}
 
 	flag := rootCmd.Flags()
@@ -125,6 +124,8 @@ func CreateRootCommand() *cobra.Command {
 		defaultKeyBitLength,
 		"--signing-key-bit-length the length of the key",
 	)
+
+	rootCmd.RunE = rootRunE(rootArgs)
 
 	return rootCmd
 }
