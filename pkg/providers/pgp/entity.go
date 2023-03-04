@@ -27,6 +27,8 @@ type Entity struct {
 
 func (e *Entity) GetEntity() (*openpgp.Entity, error) {
 	fmt.Println("debug: ", e)
+	fmt.Println("private key: ", string(e.PrivateKey))
+	fmt.Println("public key: ", string(e.PublicKey))
 
 	publicKeyPacket, err := e.getKeyPacket(e.PublicKey)
 	if err != nil {
