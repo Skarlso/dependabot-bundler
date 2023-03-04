@@ -26,10 +26,6 @@ type Entity struct {
 }
 
 func (e *Entity) GetEntity() (*openpgp.Entity, error) {
-	fmt.Println("debug: ", e)
-	fmt.Println("private key: ", string(e.PrivateKey))
-	fmt.Println("public key: ", string(e.PublicKey))
-
 	publicKeyPacket, err := e.getKeyPacket(e.PublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get public key: %w", err)
@@ -124,14 +120,14 @@ func (e *Entity) getKeyPacket(key []byte) (packet.Packet, error) {
 
 	block, err := armor.Decode(keyReader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode key: %w", err)
 	}
 
 	packetReader := packet.NewReader(block.Body)
 
 	pkt, err := packetReader.Next()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read next: %w", err)
 	}
 
 	return pkt, nil
