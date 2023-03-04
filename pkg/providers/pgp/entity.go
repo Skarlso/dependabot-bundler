@@ -67,7 +67,7 @@ func (e *Entity) createEntityFromKeys(pubKey *packet.PublicKey, privKey *packet.
 		RSABits: defaultBitSize,
 	}
 	currentTime := config.Now()
-	uid := packet.NewUserId("", "", "")
+	uid := packet.NewUserId(e.Name, "", e.Email)
 
 	oe := openpgp.Entity{
 		PrimaryKey: pubKey,
