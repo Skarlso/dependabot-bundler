@@ -34,6 +34,7 @@ type rootArgsStruct struct {
 		publicKey  string
 		privateKey string
 		bitLength  int
+		passphrase string
 	}
 }
 
@@ -123,6 +124,12 @@ func CreateRootCommand() *cobra.Command {
 		"signing-key-bit-length",
 		defaultKeyBitLength,
 		"--signing-key-bit-length the length of the key",
+	)
+	flag.StringVar(
+		&rootArgs.pgp.passphrase,
+		"signing-key-passphrase",
+		"",
+		"--signing-key-passphrase the passphrase to use for the signing key",
 	)
 
 	rootCmd.RunE = rootRunE(rootArgs)

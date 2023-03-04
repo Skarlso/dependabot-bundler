@@ -23,6 +23,7 @@ type Entity struct {
 	BitSize    int
 	PublicKey  []byte
 	PrivateKey []byte
+	Passphrase []byte
 }
 
 func (e *Entity) GetEntity() (*openpgp.Entity, error) {
@@ -44,6 +45,12 @@ func (e *Entity) GetEntity() (*openpgp.Entity, error) {
 		privKey, ok = privateKeyPacket.(*packet.PrivateKey)
 		if !ok {
 			return nil, fmt.Errorf("private key is not of the right format")
+		}
+	}
+
+	if privKey != nil && privKey.Encrypted {
+		if err := privKey.Decrypt(e.Passphrase); err != nil {
+			return nil, fmt.Errorf("failed to decrypt private key: %w", err)
 		}
 	}
 
