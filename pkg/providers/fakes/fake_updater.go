@@ -8,11 +8,12 @@ import (
 )
 
 type FakeUpdater struct {
-	UpdateStub        func(string, string) ([]string, error)
+	UpdateStub        func(string, string, string) ([]string, error)
 	updateMutex       sync.RWMutex
 	updateArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 string
 	}
 	updateReturns struct {
 		result1 []string
@@ -26,19 +27,20 @@ type FakeUpdater struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeUpdater) Update(arg1 string, arg2 string) ([]string, error) {
+func (fake *FakeUpdater) Update(arg1 string, arg2 string, arg3 string) ([]string, error) {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
+		arg3 string
+	}{arg1, arg2, arg3})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
-	fake.recordInvocation("Update", []interface{}{arg1, arg2})
+	fake.recordInvocation("Update", []interface{}{arg1, arg2, arg3})
 	fake.updateMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -52,17 +54,17 @@ func (fake *FakeUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeUpdater) UpdateCalls(stub func(string, string) ([]string, error)) {
+func (fake *FakeUpdater) UpdateCalls(stub func(string, string, string) ([]string, error)) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeUpdater) UpdateArgsForCall(i int) (string, string) {
+func (fake *FakeUpdater) UpdateArgsForCall(i int) (string, string, string) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeUpdater) UpdateReturns(result1 []string, result2 error) {

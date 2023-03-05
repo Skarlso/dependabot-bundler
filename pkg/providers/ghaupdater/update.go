@@ -29,7 +29,7 @@ func NewGithubActionUpdater(git api.Git) *GithubActionUpdater {
 }
 
 // Update updates a dependency using go get in the current working directory.
-func (g *GithubActionUpdater) Update(body, branch string) ([]string, error) {
+func (g *GithubActionUpdater) Update(body, branch, title string) ([]string, error) {
 	if !strings.Contains(branch, "github_actions") {
 		return nil, fmt.Errorf("github_actions was not in the branch name: %s", branch)
 	}

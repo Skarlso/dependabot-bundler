@@ -107,6 +107,7 @@ func TestBundler(t *testing.T) {
 		Number:  github.Int(1),
 	}, nil, nil)
 	fakePulls.GetReturns(&github.PullRequest{
+		Title: github.String("test-title"),
 		Head: &github.PullRequestBranch{
 			Ref: github.String("dependabot/go_modules/github.com/aws/aws-sdk-go-v2/service/ssm-1.27.0"),
 		},
@@ -116,7 +117,8 @@ func TestBundler(t *testing.T) {
 
 	require.NoError(t, bundler.Bundle())
 
-	body, branch := fakeUpdater.UpdateArgsForCall(0)
+	body, branch, title := fakeUpdater.UpdateArgsForCall(0)
+	assert.Equal(t, "test-title", title)
 	assert.Equal(t, "Bumps [github.com/test/test](github.com/test/test)", body)
 	assert.Equal(t, "dependabot/go_modules/github.com/aws/aws-sdk-go-v2/service/ssm-1.27.0", branch)
 	_, owner, repo, number, labels := fakeIssues.AddLabelsToIssueArgsForCall(0)
