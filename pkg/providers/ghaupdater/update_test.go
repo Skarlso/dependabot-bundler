@@ -22,7 +22,7 @@ func TestNameUpdate(t *testing.T) {
 	}()
 	git := &fakes.FakeGit{}
 	gau := NewGithubActionUpdater(git)
-	files, err := gau.Update("Bumps [actions/checkout](https://github.com/actions/checkout) from 2 to 3", "github_actions")
+	files, err := gau.Update("Bumps [actions/checkout](https://github.com/actions/checkout) from 2 to 3", "github_actions", "")
 	assert.NoError(t, err)
 	assert.Equal(t, []string{".github/workflows/test.yaml"}, files)
 	newContent, err := os.ReadFile(testFile)
@@ -49,7 +49,7 @@ func TestWithGitSHAPin(t *testing.T) {
 		},
 	}, &github.Response{}, nil)
 	gau := NewGithubActionUpdater(git)
-	files, err := gau.Update("Bumps [docker/metadata-action](https://github.com/docker/metadata-action) from 3.3.0 to 4.0.1.", "github_actions")
+	files, err := gau.Update("Bumps [docker/metadata-action](https://github.com/docker/metadata-action) from 3.3.0 to 4.0.1.", "github_actions", "")
 	assert.NoError(t, err)
 	assert.Equal(t, []string{".github/workflows/test.yaml"}, files)
 	newContent, err := os.ReadFile(testFile)
@@ -76,7 +76,7 @@ func TestWithGitSHAWithComment(t *testing.T) {
 		},
 	}, &github.Response{}, nil)
 	gau := NewGithubActionUpdater(git)
-	files, err := gau.Update("Bumps [lycheeverse/lychee-action](https://github.com/lycheeverse/lychee-action) from c0d1093b783f7ad0c445884b01da0215b2da29ee to 1.5.0 blabla bla bla.", "github_actions")
+	files, err := gau.Update("Bumps [lycheeverse/lychee-action](https://github.com/lycheeverse/lychee-action) from c0d1093b783f7ad0c445884b01da0215b2da29ee to 1.5.0 blabla bla bla.", "github_actions", "")
 	assert.NoError(t, err)
 	assert.Equal(t, []string{".github/workflows/test.yaml"}, files)
 	newContent, err := os.ReadFile(testFile)
@@ -87,13 +87,13 @@ func TestWithGitSHAWithComment(t *testing.T) {
 func TestNameUpdateInvalidBranch(t *testing.T) {
 	git := &fakes.FakeGit{}
 	gau := NewGithubActionUpdater(git)
-	_, err := gau.Update("Bumps [actions/checkout](https://github.com/actions/checkout) from 2 to 3", "invalid")
+	_, err := gau.Update("Bumps [actions/checkout](https://github.com/actions/checkout) from 2 to 3", "invalid", "")
 	assert.EqualError(t, err, "github_actions was not in the branch name: invalid")
 }
 
 func TestNameUpdateInvalidDescription(t *testing.T) {
 	git := &fakes.FakeGit{}
 	gau := NewGithubActionUpdater(git)
-	_, err := gau.Update("invalid", "github_actions")
+	_, err := gau.Update("invalid", "github_actions", "")
 	assert.EqualError(t, err, "failed to extract action name and from -> to version from description: invalid")
 }

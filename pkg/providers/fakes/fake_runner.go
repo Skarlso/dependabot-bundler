@@ -8,11 +8,12 @@ import (
 )
 
 type FakeRunner struct {
-	RunStub        func(string, ...string) ([]byte, error)
+	RunStub        func(string, string, ...string) ([]byte, error)
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
 		arg1 string
-		arg2 []string
+		arg2 string
+		arg3 []string
 	}
 	runReturns struct {
 		result1 []byte
@@ -26,19 +27,20 @@ type FakeRunner struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeRunner) Run(arg1 string, arg2 ...string) ([]byte, error) {
+func (fake *FakeRunner) Run(arg1 string, arg2 string, arg3 ...string) ([]byte, error) {
 	fake.runMutex.Lock()
 	ret, specificReturn := fake.runReturnsOnCall[len(fake.runArgsForCall)]
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
 		arg1 string
-		arg2 []string
-	}{arg1, arg2})
+		arg2 string
+		arg3 []string
+	}{arg1, arg2, arg3})
 	stub := fake.RunStub
 	fakeReturns := fake.runReturns
-	fake.recordInvocation("Run", []interface{}{arg1, arg2})
+	fake.recordInvocation("Run", []interface{}{arg1, arg2, arg3})
 	fake.runMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2...)
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -52,17 +54,17 @@ func (fake *FakeRunner) RunCallCount() int {
 	return len(fake.runArgsForCall)
 }
 
-func (fake *FakeRunner) RunCalls(stub func(string, ...string) ([]byte, error)) {
+func (fake *FakeRunner) RunCalls(stub func(string, string, ...string) ([]byte, error)) {
 	fake.runMutex.Lock()
 	defer fake.runMutex.Unlock()
 	fake.RunStub = stub
 }
 
-func (fake *FakeRunner) RunArgsForCall(i int) (string, []string) {
+func (fake *FakeRunner) RunArgsForCall(i int) (string, string, []string) {
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
 	argsForCall := fake.runArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeRunner) RunReturns(result1 []byte, result2 error) {

@@ -81,7 +81,7 @@ func (n *Bundler) Bundle() error {
 			// dependabot/github_actions/actions/github-script-6.0.0
 			// dependabot/go_modules/github.com/aws/aws-sdk-go-v2/service/ssm-1.27.0
 			// Which we can use to detect what kind of update we would like to perform.
-			files, err := n.Updater.Update(issue.GetBody(), pr.GetHead().GetRef())
+			files, err := n.Updater.Update(issue.GetBody(), pr.GetHead().GetRef(), pr.GetTitle())
 			if err != nil {
 				n.Logger.Debug("failed to update %s issue; failure was: %s, skipping...\n", issue.GetTitle(), err)
 
@@ -140,7 +140,7 @@ func (n *Bundler) Bundle() error {
 
 	// clean up each modified file
 	for k := range modifiedFiles {
-		if output, err := n.Runner.Run("git", "checkout", k); err != nil {
+		if output, err := n.Runner.Run("git", ".", "checkout", k); err != nil {
 			n.Logger.Log("failed to run clean, skipping... return error and output of clean command: %s; %s",
 				err.Error(), string(output))
 		}
