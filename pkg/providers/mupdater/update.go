@@ -62,7 +62,7 @@ func (g *GoUpdater) Update(body, branch, title string) ([]string, error) {
 		return nil, fmt.Errorf("failed to run go get: %w", err)
 	}
 
-	return []string{"go.mod", "go.sum"}, nil
+	return []string{filepath.Join(workdir, "go.mod"), filepath.Join(workdir, "go.sum")}, nil
 }
 
 func (g *GoUpdater) extractModuleName(description string) string {

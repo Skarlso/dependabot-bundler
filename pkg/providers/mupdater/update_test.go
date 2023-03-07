@@ -41,7 +41,7 @@ func TestNewGoUpdaterWithLongerVersionWithInFolder(t *testing.T) {
 	mu := NewGoUpdater(&logger.QuiteLogger{}, mockNext, fakeRunner)
 	files, err := mu.Update("Bumps [golang.org/x/sys](https://github.com/golang/sys) from 0.0.0-20200323222414-85ca7c5b95cd to 0.1.0.", "go_modules", "chore(deps): Bump golang.org/x/sys from 0.0.0-20211013075003-97ac67df715c to 0.1.0 in /hack/tools")
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"go.mod", "go.sum"}, files)
+	assert.Equal(t, []string{"hack/tools/go.mod", "hack/tools/go.sum"}, files)
 	arg, workdir, args := fakeRunner.RunArgsForCall(0)
 	assert.Equal(t, "go", arg)
 	assert.Equal(t, []string{"get", "-u", "golang.org/x/sys"}, args)
