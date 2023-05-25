@@ -62,6 +62,12 @@ func (g *GoUpdater) Update(body, branch, title string) ([]string, error) {
 		return nil, fmt.Errorf("failed to run go get: %w", err)
 	}
 
+	if output, err := g.Runner.Run("go", workdir, "mod", "tidy"); err != nil {
+		g.Logger.Debug("go mod tidy failed, output from command: %s; error: %s", string(output), err)
+
+		return nil, fmt.Errorf("failed to run go mod tidy: %w", err)
+	}
+
 	return []string{filepath.Join(workdir, "go.mod"), filepath.Join(workdir, "go.sum")}, nil
 }
 
